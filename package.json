@@ -1,0 +1,197 @@
+{
+  "name": "open-model",
+  "displayName": "Open Model for Copilot Chat",
+  "description": "Integrate Kimi, DeepSeek, GLM, and Qwen models into GitHub Copilot Chat",
+  "version": "0.1.0",
+  "publisher": "open-model",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "keywords": [
+    "kimi",
+    "deepseek",
+    "glm",
+    "qwen",
+    "copilot",
+    "ai",
+    "llm"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languageModelChatProviders": [
+      { "vendor": "kimi",     "displayName": "Kimi (Moonshot AI)" },
+      { "vendor": "deepseek", "displayName": "DeepSeek" },
+      { "vendor": "glm",      "displayName": "GLM (Zhipu AI)" },
+      { "vendor": "qwen",     "displayName": "Qwen (Alibaba)" }
+    ],
+    "configuration": {
+      "title": "Open Model for Copilot Chat",
+      "properties": {
+        "openModel.kimi.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Kimi (Moonshot AI) models in Copilot Chat"
+        },
+        "openModel.kimi.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Kimi (Moonshot AI) API key. Get yours at https://platform.moonshot.cn/",
+          "markdownDescription": "Kimi (Moonshot AI) API key. Get yours at [platform.moonshot.cn](https://platform.moonshot.cn/)"
+        },
+        "openModel.kimi.models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Model ID" },
+              "name": { "type": "string", "description": "Display name" },
+              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
+              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+            },
+            "required": ["id", "name"]
+          },
+          "default": [
+            { "id": "moonshot-v1-8k", "name": "Kimi moonshot-v1-8k", "maxInputTokens": 8192, "maxOutputTokens": 4096 },
+            { "id": "moonshot-v1-32k", "name": "Kimi moonshot-v1-32k", "maxInputTokens": 32768, "maxOutputTokens": 4096 },
+            { "id": "moonshot-v1-128k", "name": "Kimi moonshot-v1-128k", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
+            { "id": "kimi-latest", "name": "Kimi Latest", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
+            { "id": "kimi-thinking-preview", "name": "Kimi Thinking Preview", "maxInputTokens": 131072, "maxOutputTokens": 16384 }
+          ],
+          "description": "List of Kimi models to register. Each model requires id and name."
+        },
+        "openModel.deepseek.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable DeepSeek models in Copilot Chat"
+        },
+        "openModel.deepseek.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "DeepSeek API key. Get yours at https://platform.deepseek.com/",
+          "markdownDescription": "DeepSeek API key. Get yours at [platform.deepseek.com](https://platform.deepseek.com/)"
+        },
+        "openModel.deepseek.models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Model ID" },
+              "name": { "type": "string", "description": "Display name" },
+              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
+              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+            },
+            "required": ["id", "name"]
+          },
+          "default": [
+            { "id": "deepseek-chat", "name": "DeepSeek V3", "maxInputTokens": 65536, "maxOutputTokens": 8192 },
+            { "id": "deepseek-reasoner", "name": "DeepSeek R1", "maxInputTokens": 65536, "maxOutputTokens": 32768 }
+          ],
+          "description": "List of DeepSeek models to register. Each model requires id and name."
+        },
+        "openModel.glm.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable GLM (Zhipu AI) models in Copilot Chat"
+        },
+        "openModel.glm.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "GLM (Zhipu AI) API key. Get yours at https://open.bigmodel.cn/",
+          "markdownDescription": "GLM (Zhipu AI) API key. Get yours at [open.bigmodel.cn](https://open.bigmodel.cn/)"
+        },
+        "openModel.glm.models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Model ID" },
+              "name": { "type": "string", "description": "Display name" },
+              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
+              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+            },
+            "required": ["id", "name"]
+          },
+          "default": [
+            { "id": "glm-4-plus", "name": "GLM-4 Plus", "maxInputTokens": 131072, "maxOutputTokens": 4096 },
+            { "id": "glm-4-air-250414", "name": "GLM-4 Air", "maxInputTokens": 131072, "maxOutputTokens": 4096 },
+            { "id": "glm-4-flash-250414", "name": "GLM-4 Flash", "maxInputTokens": 131072, "maxOutputTokens": 4096 },
+            { "id": "glm-z1-flash", "name": "GLM Z1 Flash (Reasoning)", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
+            { "id": "glm-4-long", "name": "GLM-4 Long (1M context)", "maxInputTokens": 1000000, "maxOutputTokens": 4096 }
+          ],
+          "description": "List of GLM models to register. Each model requires id and name."
+        },
+        "openModel.qwen.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Qwen (Alibaba Cloud) models in Copilot Chat"
+        },
+        "openModel.qwen.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Qwen (Alibaba Cloud Dashscope) API key. Get yours at https://dashscope.aliyun.com/",
+          "markdownDescription": "Qwen (Alibaba Cloud Dashscope) API key. Get yours at [dashscope.aliyun.com](https://dashscope.aliyun.com/)"
+        },
+        "openModel.qwen.models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Model ID" },
+              "name": { "type": "string", "description": "Display name" },
+              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
+              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+            },
+            "required": ["id", "name"]
+          },
+          "default": [
+            { "id": "qwen-turbo-latest", "name": "Qwen Turbo Latest", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
+            { "id": "qwen-plus-latest", "name": "Qwen Plus Latest", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
+            { "id": "qwen-max-latest", "name": "Qwen Max Latest", "maxInputTokens": 32768, "maxOutputTokens": 8192 },
+            { "id": "qwen3-235b-a22b", "name": "Qwen3 235B", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
+            { "id": "qwen3-30b-a3b", "name": "Qwen3 30B", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
+            { "id": "qwq-plus-latest", "name": "QwQ Plus (Reasoning)", "maxInputTokens": 131072, "maxOutputTokens": 32768 }
+          ],
+          "description": "List of Qwen models to register. Each model requires id and name."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "openModel.configure",
+        "title": "Open Model: Configure Providers",
+        "category": "Open Model"
+      },
+      {
+        "command": "openModel.reload",
+        "title": "Open Model: Reload Providers",
+        "category": "Open Model"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.99.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.5.4",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
