@@ -5,6 +5,10 @@
   "version": "0.1.0",
   "publisher": "open-model",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cjcrobin/open-model-extension.git"
+  },
   "engines": {
     "vscode": "^1.99.0"
   },
