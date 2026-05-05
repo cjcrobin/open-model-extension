@@ -3,3 +3,7 @@ dist/
 node_modules/
 *.vsix
 .vscode-test/
+src/
+tsconfig.json
+webpack.config.js
+.github/

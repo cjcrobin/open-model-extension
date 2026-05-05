@@ -47,16 +47,16 @@ Add a custom model to a provider by editing the `models` array in settings:
 ```json
 "openModel.deepseek.models": [
   {
-    "id": "deepseek-chat",
-    "name": "DeepSeek V3",
-    "maxInputTokens": 65536,
-    "maxOutputTokens": 8192
+    "id": "deepseek-v4-flash",
+    "name": "DeepSeek V4 Flash",
+    "maxInputTokens": 1000000,
+    "maxOutputTokens": 393216
   },
   {
-    "id": "deepseek-reasoner",
-    "name": "DeepSeek R1",
-    "maxInputTokens": 65536,
-    "maxOutputTokens": 32768
+    "id": "deepseek-v4-pro",
+    "name": "DeepSeek V4 Pro",
+    "maxInputTokens": 1000000,
+    "maxOutputTokens": 393216
   }
 ]
 ```
@@ -69,22 +69,38 @@ Add a custom model to a provider by editing the `models` array in settings:
 ## Default Models
 
 ### Kimi (Moonshot AI)
-- moonshot-v1-8k / moonshot-v1-32k / moonshot-v1-128k
-- kimi-latest
-- kimi-thinking-preview (reasoning)
+| Model ID | Name | Context | Max Output |
+|----------|------|---------|------------|
+| `kimi-k2.6` | Kimi K2.6 | 256K | 32K |
+| `kimi-k2.5` | Kimi K2.5 | 256K | 32K |
+| `moonshot-v1-128k` | Moonshot V1 128K | 128K | 16K |
+| `moonshot-v1-32k` | Moonshot V1 32K | 32K | 16K |
+| `moonshot-v1-8k` | Moonshot V1 8K | 8K | 4K |
 
 ### DeepSeek
-- deepseek-chat (DeepSeek V3)
-- deepseek-reasoner (DeepSeek R1)
+| Model ID | Name | Context | Max Output |
+|----------|------|---------|------------|
+| `deepseek-v4-flash` | DeepSeek V4 Flash | 1M | 384K |
+| `deepseek-v4-pro` | DeepSeek V4 Pro | 1M | 384K |
+| `deepseek-chat` | DeepSeek V3 (Legacy) | 64K | 8K |
+| `deepseek-reasoner` | DeepSeek R1 (Legacy) | 64K | 32K |
 
 ### GLM (Zhipu AI)
-- glm-4-plus
-- glm-4-air-250414
-- glm-4-flash-250414
-- glm-z1-flash (reasoning)
-- glm-4-long (1M context)
+| Model ID | Name | Context | Max Output |
+|----------|------|---------|------------|
+| `glm-5.1` | GLM-5.1 | 200K | 128K |
+| `glm-5` | GLM-5 | 200K | 128K |
+| `glm-5-turbo` | GLM-5-Turbo | 200K | 128K |
+| `glm-4.7` | GLM-4.7 | 200K | 128K |
+| `glm-4.7-flash` | GLM-4.7-Flash (Free) | 200K | 128K |
+| `glm-4-long` | GLM-4-Long | 1M | 4K |
 
 ### Qwen (Alibaba Dashscope)
-- qwen-turbo-latest / qwen-plus-latest / qwen-max-latest
-- qwen3-235b-a22b / qwen3-30b-a3b
-- qwq-plus-latest (reasoning)
+| Model ID | Name | Context | Max Output |
+|----------|------|---------|------------|
+| `qwen3.6-plus` | Qwen3.6-Plus | 1M | 32K |
+| `qwen3.6-flash` | Qwen3.6-Flash | 1M | 32K |
+| `qwen3.6-max-preview` | Qwen3.6-Max (Preview) | 256K | 32K |
+| `qwen3-235b-a22b` | Qwen3-235B-A22B | 128K | 32K |
+| `qwen3-32b` | Qwen3-32B | 128K | 32K |
+| `qwq-32b` | QwQ-32B (Reasoning) | 128K | 32K |

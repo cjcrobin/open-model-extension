@@ -24,6 +24,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "icon": "images/Logo.png",
   "main": "./dist/extension.js",
   "contributes": {
     "languageModelChatProviders": [
@@ -59,11 +60,11 @@
             "required": ["id", "name"]
           },
           "default": [
-            { "id": "moonshot-v1-8k", "name": "Kimi moonshot-v1-8k", "maxInputTokens": 8192, "maxOutputTokens": 4096 },
-            { "id": "moonshot-v1-32k", "name": "Kimi moonshot-v1-32k", "maxInputTokens": 32768, "maxOutputTokens": 4096 },
-            { "id": "moonshot-v1-128k", "name": "Kimi moonshot-v1-128k", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
-            { "id": "kimi-latest", "name": "Kimi Latest", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
-            { "id": "kimi-thinking-preview", "name": "Kimi Thinking Preview", "maxInputTokens": 131072, "maxOutputTokens": 16384 }
+            { "id": "kimi-k2.6", "name": "Kimi K2.6", "maxInputTokens": 262144, "maxOutputTokens": 32768 },
+            { "id": "kimi-k2.5", "name": "Kimi K2.5", "maxInputTokens": 262144, "maxOutputTokens": 32768 },
+            { "id": "moonshot-v1-128k", "name": "Moonshot V1 128K", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
+            { "id": "moonshot-v1-32k", "name": "Moonshot V1 32K", "maxInputTokens": 32768, "maxOutputTokens": 16384 },
+            { "id": "moonshot-v1-8k", "name": "Moonshot V1 8K", "maxInputTokens": 8192, "maxOutputTokens": 4096 }
           ],
           "description": "List of Kimi models to register. Each model requires id and name."
         },
@@ -91,8 +92,10 @@
             "required": ["id", "name"]
           },
           "default": [
-            { "id": "deepseek-chat", "name": "DeepSeek V3", "maxInputTokens": 65536, "maxOutputTokens": 8192 },
-            { "id": "deepseek-reasoner", "name": "DeepSeek R1", "maxInputTokens": 65536, "maxOutputTokens": 32768 }
+            { "id": "deepseek-v4-flash", "name": "DeepSeek V4 Flash", "maxInputTokens": 1000000, "maxOutputTokens": 393216 },
+            { "id": "deepseek-v4-pro", "name": "DeepSeek V4 Pro", "maxInputTokens": 1000000, "maxOutputTokens": 393216 },
+            { "id": "deepseek-chat", "name": "DeepSeek V3 (Legacy)", "maxInputTokens": 65536, "maxOutputTokens": 8192 },
+            { "id": "deepseek-reasoner", "name": "DeepSeek R1 (Legacy)", "maxInputTokens": 65536, "maxOutputTokens": 32768 }
           ],
           "description": "List of DeepSeek models to register. Each model requires id and name."
         },
@@ -120,11 +123,12 @@
             "required": ["id", "name"]
           },
           "default": [
-            { "id": "glm-4-plus", "name": "GLM-4 Plus", "maxInputTokens": 131072, "maxOutputTokens": 4096 },
-            { "id": "glm-4-air-250414", "name": "GLM-4 Air", "maxInputTokens": 131072, "maxOutputTokens": 4096 },
-            { "id": "glm-4-flash-250414", "name": "GLM-4 Flash", "maxInputTokens": 131072, "maxOutputTokens": 4096 },
-            { "id": "glm-z1-flash", "name": "GLM Z1 Flash (Reasoning)", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
-            { "id": "glm-4-long", "name": "GLM-4 Long (1M context)", "maxInputTokens": 1000000, "maxOutputTokens": 4096 }
+            { "id": "glm-5.1", "name": "GLM-5.1", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
+            { "id": "glm-5", "name": "GLM-5", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
+            { "id": "glm-5-turbo", "name": "GLM-5-Turbo", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
+            { "id": "glm-4.7", "name": "GLM-4.7", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
+            { "id": "glm-4.7-flash", "name": "GLM-4.7-Flash (Free)", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
+            { "id": "glm-4-long", "name": "GLM-4-Long (1M context)", "maxInputTokens": 1000000, "maxOutputTokens": 4096 }
           ],
           "description": "List of GLM models to register. Each model requires id and name."
         },
@@ -152,12 +156,12 @@
             "required": ["id", "name"]
           },
           "default": [
-            { "id": "qwen-turbo-latest", "name": "Qwen Turbo Latest", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
-            { "id": "qwen-plus-latest", "name": "Qwen Plus Latest", "maxInputTokens": 131072, "maxOutputTokens": 8192 },
-            { "id": "qwen-max-latest", "name": "Qwen Max Latest", "maxInputTokens": 32768, "maxOutputTokens": 8192 },
-            { "id": "qwen3-235b-a22b", "name": "Qwen3 235B", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
-            { "id": "qwen3-30b-a3b", "name": "Qwen3 30B", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
-            { "id": "qwq-plus-latest", "name": "QwQ Plus (Reasoning)", "maxInputTokens": 131072, "maxOutputTokens": 32768 }
+            { "id": "qwen3.6-plus", "name": "Qwen3.6-Plus", "maxInputTokens": 1000000, "maxOutputTokens": 32768 },
+            { "id": "qwen3.6-flash", "name": "Qwen3.6-Flash", "maxInputTokens": 1000000, "maxOutputTokens": 32768 },
+            { "id": "qwen3.6-max-preview", "name": "Qwen3.6-Max (Preview)", "maxInputTokens": 262144, "maxOutputTokens": 32768 },
+            { "id": "qwen3-235b-a22b", "name": "Qwen3-235B-A22B", "maxInputTokens": 131072, "maxOutputTokens": 32768 },
+            { "id": "qwen3-32b", "name": "Qwen3-32B", "maxInputTokens": 131072, "maxOutputTokens": 32768 },
+            { "id": "qwq-32b", "name": "QwQ-32B (Reasoning)", "maxInputTokens": 131072, "maxOutputTokens": 32768 }
           ],
           "description": "List of Qwen models to register. Each model requires id and name."
         }
