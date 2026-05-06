@@ -3,7 +3,7 @@
   "displayName": "Open Model for Copilot Chat",
   "description": "Integrate Kimi, DeepSeek, GLM, and Qwen models into GitHub Copilot Chat",
   "version": "0.1.0",
-  "publisher": "open-model",
+  "publisher": "JingciChen",
   "license": "MIT",
   "repository": {
     "type": "git",
