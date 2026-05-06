@@ -1,4 +1,8 @@
-# Open Model for Copilot Chat
+# Open Model — Kimi, DeepSeek, GLM & Qwen for Copilot Chat
+
+> Use **Kimi (Moonshot AI)**, **DeepSeek V4**, **GLM-5 (Zhipu AI)**, and **Qwen3 (Alibaba)** models directly inside **GitHub Copilot Chat** — with streaming, reasoning tokens, and 1M context support.
+
+**Keywords:** `kimi` · `moonshot` · `deepseek` · `deepseek-v4` · `deepseek-r1` · `glm` · `zhipu` · `qwen` · `qwen3` · `qwq` · `copilot chat` · `llm` · `reasoning model` · `china ai`
 
 Integrate **Kimi**, **DeepSeek**, **GLM**, and **Qwen** models into GitHub Copilot Chat as selectable AI models.
 

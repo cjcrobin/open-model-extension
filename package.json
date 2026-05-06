@@ -1,8 +1,8 @@
 {
   "name": "open-model",
-  "displayName": "Open Model for Copilot Chat",
-  "description": "Integrate Kimi, DeepSeek, GLM, and Qwen models into GitHub Copilot Chat",
-  "version": "0.1.0",
+  "displayName": "Open Model — Kimi, DeepSeek, GLM & Qwen for Copilot Chat",
+  "description": "Use Kimi (Moonshot AI), DeepSeek V4, GLM-5, and Qwen3 models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens (DeepSeek R1, QwQ), and 1M context windows.",
+  "version": "0.1.1",
   "publisher": "JingciChen",
   "license": "MIT",
   "repository": {
@@ -14,17 +14,32 @@
   },
   "categories": [
     "AI",
-    "Chat"
+    "Chat",
+    "Machine Learning"
   ],
   "keywords": [
     "kimi",
+    "moonshot",
     "deepseek",
+    "deepseek-v4",
+    "deepseek-r1",
     "glm",
+    "zhipu",
     "qwen",
+    "qwen3",
+    "qwq",
     "copilot",
+    "copilot chat",
     "ai",
-    "llm"
+    "llm",
+    "language model",
+    "reasoning",
+    "china ai"
   ],
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
