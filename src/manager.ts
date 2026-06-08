@@ -21,19 +21,31 @@ function readProviderModels(name: ProviderName): ModelConfig[] {
   return getNestedConfig<ModelConfig[]>(name, 'models', []);
 }
 
-function readApiKey(name: ProviderName): string {
-  return getNestedConfig<string>(name, 'apiKey', '');
-}
-
 /**
  * Manages registration and lifecycle of all model providers.
  */
 export class ProviderManager implements vscode.Disposable {
   private providers = new Map<ProviderName, ProviderEntry>();
+  private apiKeys = new Map<ProviderName, string>();
   private readonly output: vscode.OutputChannel;
 
   constructor(output: vscode.OutputChannel) {
     this.output = output;
+  }
+
+  /**
+   * Set a provider's API key in the in-memory cache.
+   * Call this after storing it in SecretStorage.
+   */
+  setApiKey(name: ProviderName, key: string): void {
+    this.apiKeys.set(name, key);
+  }
+
+  /**
+   * Get a provider's API key from the in-memory cache.
+   */
+  private getApiKey(name: ProviderName): string {
+    return this.apiKeys.get(name) ?? '';
   }
 
   /**
@@ -48,7 +60,7 @@ export class ProviderManager implements vscode.Disposable {
 
       const instance = new OpenAICompatProvider(
         name,
-        () => readApiKey(name),
+        () => this.getApiKey(name),
         () => readProviderModels(name)
       );
 
@@ -80,7 +92,7 @@ export class ProviderManager implements vscode.Disposable {
     this.output.appendLine('\n--- Provider Status ---');
     for (const name of PROVIDER_NAMES) {
       const enabled = getNestedConfig<boolean>(name, 'enabled', false);
-      const apiKey = readApiKey(name);
+      const apiKey = this.getApiKey(name);
       const models = getNestedConfig<ModelConfig[]>(name, 'models', []);
       const { displayName } = PROVIDER_METADATA[name];
 
@@ -93,7 +105,7 @@ export class ProviderManager implements vscode.Disposable {
         this.output.appendLine(`[${displayName}] Enabled but API key is missing!`);
         vscode.window.showWarningMessage(
           `Open Model: ${displayName} is enabled but has no API key. ` +
-            `Set openModel.${name}.apiKey in settings.`
+            `Use "Open Model: Set API Key" command to set it.`
         );
         continue;
       }

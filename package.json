@@ -2,7 +2,7 @@
   "name": "open-model",
   "displayName": "Open Model — Kimi, DeepSeek, GLM & Qwen for Copilot Chat",
   "description": "Use Kimi (Moonshot AI), DeepSeek V4, GLM-5, and Qwen3 models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens (DeepSeek R1, QwQ), and 1M context windows.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "JingciChen",
   "license": "MIT",
   "repository": {
@@ -60,12 +60,6 @@
           "default": false,
           "description": "Enable Kimi (Moonshot AI) models in Copilot Chat"
         },
-        "openModel.kimi.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "Kimi (Moonshot AI) API key. Get yours at https://platform.moonshot.cn/",
-          "markdownDescription": "Kimi (Moonshot AI) API key. Get yours at [platform.moonshot.cn](https://platform.moonshot.cn/)"
-        },
         "openModel.kimi.models": {
           "type": "array",
           "items": {
@@ -92,12 +86,6 @@
           "default": false,
           "description": "Enable DeepSeek models in Copilot Chat"
         },
-        "openModel.deepseek.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "DeepSeek API key. Get yours at https://platform.deepseek.com/",
-          "markdownDescription": "DeepSeek API key. Get yours at [platform.deepseek.com](https://platform.deepseek.com/)"
-        },
         "openModel.deepseek.models": {
           "type": "array",
           "items": {
@@ -122,12 +110,6 @@
           "type": "boolean",
           "default": false,
           "description": "Enable GLM (Zhipu AI) models in Copilot Chat"
-        },
-        "openModel.glm.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "GLM (Zhipu AI) API key. Get yours at https://open.bigmodel.cn/",
-          "markdownDescription": "GLM (Zhipu AI) API key. Get yours at [open.bigmodel.cn](https://open.bigmodel.cn/)"
         },
         "openModel.glm.models": {
           "type": "array",
@@ -156,12 +138,6 @@
           "default": false,
           "description": "Enable Qwen (Alibaba Cloud) models in Copilot Chat"
         },
-        "openModel.qwen.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "Qwen (Alibaba Cloud Dashscope) API key. Get yours at https://dashscope.aliyun.com/",
-          "markdownDescription": "Qwen (Alibaba Cloud Dashscope) API key. Get yours at [dashscope.aliyun.com](https://dashscope.aliyun.com/)"
-        },
         "openModel.qwen.models": {
           "type": "array",
           "items": {
@@ -187,6 +163,11 @@
       }
     },
     "commands": [
+      {
+        "command": "openModel.setApiKey",
+        "title": "Open Model: Set API Key",
+        "category": "Open Model"
+      },
       {
         "command": "openModel.configure",
         "title": "Open Model: Configure Providers",

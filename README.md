@@ -10,7 +10,7 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, and **Qwen** models into GitHub Copil
 
 - Register models from Kimi (Moonshot AI), DeepSeek, GLM (Zhipu AI), and Qwen (Alibaba Dashscope) into the Copilot Chat model picker
 - Each provider can be independently enabled/disabled
-- Configurable API keys per provider
+- Secure API key management via VS Code SecretStorage (OS keychain)
 - Fully customizable model lists per provider (with sensible defaults)
 - Streaming responses with reasoning token support (DeepSeek R1, Kimi Thinking, QwQ)
 
@@ -24,7 +24,7 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, and **Qwen** models into GitHub Copil
 1. Install this extension
 2. Open Settings (`Ctrl+,`) and search for `Open Model`
 3. Enable the providers you want (e.g. `openModel.deepseek.enabled = true`)
-4. Set the API key for each enabled provider
+4. Press `Ctrl+Shift+P` → **Open Model: Set API Key** to securely configure API keys for each enabled provider (keys are encrypted and stored in your OS keychain)
 5. The models will appear in the Copilot Chat model picker
 
 ## Configuration
@@ -32,17 +32,32 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, and **Qwen** models into GitHub Copil
 | Setting | Description |
 |---------|-------------|
 | `openModel.kimi.enabled` | Enable Kimi (Moonshot AI) |
-| `openModel.kimi.apiKey` | Kimi API key ([get one](https://platform.moonshot.cn/)) |
 | `openModel.kimi.models` | List of Kimi models to register |
 | `openModel.deepseek.enabled` | Enable DeepSeek |
-| `openModel.deepseek.apiKey` | DeepSeek API key ([get one](https://platform.deepseek.com/)) |
 | `openModel.deepseek.models` | List of DeepSeek models to register |
 | `openModel.glm.enabled` | Enable GLM (Zhipu AI) |
-| `openModel.glm.apiKey` | GLM API key ([get one](https://open.bigmodel.cn/)) |
 | `openModel.glm.models` | List of GLM models to register |
 | `openModel.qwen.enabled` | Enable Qwen (Alibaba Dashscope) |
-| `openModel.qwen.apiKey` | Qwen API key ([get one](https://dashscope.aliyun.com/)) |
 | `openModel.qwen.models` | List of Qwen models to register |
+
+### API Key Management
+
+API keys are **never stored in `settings.json`**. Instead, they are saved securely using VS Code's built-in secret storage (which uses your OS keychain — macOS Keychain, Windows Credential Manager, or Linux libsecret).
+
+To set an API key:
+
+1. Press `Ctrl+Shift+P` to open the Command Palette
+2. Type **Open Model: Set API Key** and press `Enter`
+3. Select a provider from the list
+4. Paste your API key in the password-masked input box
+
+The key is encrypted at rest and loaded automatically when the extension starts. You can update a key at any time by running the command again — changes take effect immediately without reloading the window.
+
+> **Tip:** Get your API keys here:
+> - [Kimi / Moonshot AI](https://platform.moonshot.cn/)
+> - [DeepSeek](https://platform.deepseek.com/)
+> - [GLM / Zhipu AI](https://open.bigmodel.cn/)
+> - [Qwen / Alibaba Dashscope](https://dashscope.aliyun.com/)
 
 ### Custom Model Example
 
@@ -67,8 +82,11 @@ Add a custom model to a provider by editing the `models` array in settings:
 
 ## Commands
 
-- **Open Model: Configure Providers** — Open settings for this extension
-- **Open Model: Reload Providers** — Reload model registrations (useful after API key changes)
+| Command | Description |
+|---------|-------------|
+| **Open Model: Set API Key** | Set a provider's API key securely (encrypted via OS keychain) |
+| **Open Model: Configure Providers** | Open settings for this extension (enable/disable providers, customize model lists) |
+| **Open Model: Reload Providers** | Reload model registrations |
 
 ## Default Models
 
