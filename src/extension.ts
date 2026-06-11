@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ProviderManager } from './manager';
 import { PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from './types';
+import { getFriendlyErrorMessage } from './errors';
 
 let manager: ProviderManager | undefined;
 
@@ -57,11 +58,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.setApiKey', async () => {
-      // Let user pick which provider to set the API key for
-      const items = PROVIDER_NAMES.map((name) => ({
-        label: PROVIDER_METADATA[name].displayName,
-        description: name,
-      }));
+      const items = PROVIDER_NAMES.map((name) => {
+        const hasKey = manager!.hasApiKey(name);
+        const keyStatus = hasKey ? 'API key configured' : 'No API key set';
+        const enabled = vscode.workspace.getConfiguration(`openModel.${name}`).get<boolean>('enabled', false);
+        const enabledStatus = enabled ? 'Enabled' : 'Disabled';
+
+        return {
+          label: PROVIDER_METADATA[name].displayName,
+          description: name,
+          detail: `${enabledStatus} · ${keyStatus}`,
+        };
+      });
 
       const pick = await vscode.window.showQuickPick(items, {
         placeHolder: 'Select a provider to set its API key',
@@ -112,6 +120,87 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // Refresh model lists in case this provider is now enabled
       manager!.notifyAll();
       manager!.logStatus();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.clearApiKey', async () => {
+      const items = PROVIDER_NAMES.map((name) => ({
+        label: PROVIDER_METADATA[name].displayName,
+        description: name,
+      }));
+
+      const pick = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select a provider to clear its API key',
+        title: 'Open Model: Clear API Key',
+      });
+
+      if (!pick) {
+        return;
+      }
+
+      const providerName = pick.description as ProviderName;
+      await context.secrets.delete(`openModel.${providerName}.apiKey`);
+      manager!.setApiKey(providerName, '');
+      manager!.notifyAll();
+      manager!.logStatus();
+
+      vscode.window.showInformationMessage(
+        `Open Model: ${PROVIDER_METADATA[providerName].displayName} API key cleared.`
+      );
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.testConnection', async () => {
+      const items = PROVIDER_NAMES.map((name) => ({
+        label: PROVIDER_METADATA[name].displayName,
+        description: name,
+      }));
+
+      const pick = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select a provider to test connection',
+        title: 'Open Model: Test Connection',
+      });
+
+      if (!pick) {
+        return;
+      }
+
+      const providerName = pick.description as ProviderName;
+      const apiKey = manager!.getApiKey(providerName);
+      const { baseUrl, displayName } = PROVIDER_METADATA[providerName];
+
+      if (!apiKey) {
+        vscode.window.showErrorMessage(
+          `${displayName} API key is not configured. Use "Open Model: Set API Key" first.`
+        );
+        return;
+      }
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Testing ${displayName} connection...`,
+        },
+        async () => {
+          try {
+            const response = await fetch(`${baseUrl}/models`, {
+              headers: { Authorization: `Bearer ${apiKey}` },
+            });
+            if (response.ok) {
+              vscode.window.showInformationMessage(`${displayName}: Connection successful!`);
+            } else {
+              const errorText = await response.text();
+              vscode.window.showErrorMessage(
+                getFriendlyErrorMessage(response.status, displayName, errorText)
+              );
+            }
+          } catch (err) {
+            vscode.window.showErrorMessage(`${displayName}: Connection failed - ${err}`);
+          }
+        }
+      );
     })
   );
 

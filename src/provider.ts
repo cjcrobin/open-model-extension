@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ModelConfig, PROVIDER_METADATA, ProviderName } from './types';
+import { getFriendlyErrorMessage } from './errors';
 
 // LanguageModelThinkingPart is an internal VS Code API not yet in @types/vscode.
 // It renders a collapsible "Thinking..." block in Copilot Chat, identical to
@@ -11,7 +12,7 @@ const ThinkingPart: new (text: string, id?: string, metadata?: object) => vscode
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (vscode as any).LanguageModelThinkingPart;
 
-interface ChatCompletionMessage {
+export interface ChatCompletionMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string | null;
   tool_call_id?: string;
@@ -22,7 +23,7 @@ interface ChatCompletionMessage {
   }>;
 }
 
-interface ChatCompletionChunk {
+export interface ChatCompletionChunk {
   choices: Array<{
     delta?: {
       content?: string | null;
@@ -41,7 +42,7 @@ interface ChatCompletionChunk {
 /**
  * Convert VS Code LanguageModelChatRequestMessage to OpenAI-compatible message format.
  */
-function convertMessages(
+export function convertMessages(
   messages: readonly vscode.LanguageModelChatRequestMessage[]
 ): ChatCompletionMessage[] {
   const result: ChatCompletionMessage[] = [];
@@ -102,6 +103,39 @@ function convertMessages(
 }
 
 /**
+ * Parse a single SSE line into a ChatCompletionChunk, or return null for non-data lines.
+ */
+export function parseSSELine(line: string): ChatCompletionChunk | null {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed === 'data: [DONE]' || !trimmed.startsWith('data: ')) {
+    return null;
+  }
+  return JSON.parse(trimmed.slice('data: '.length));
+}
+
+/**
+ * Estimate the token count for a given text, with CJK-aware logic.
+ */
+export function estimateTokenCount(text: string): number {
+  let tokens = 0;
+  for (const char of text) {
+    const code = char.codePointAt(0)!;
+    if (
+      (code >= 0x4E00 && code <= 0x9FFF) ||
+      (code >= 0x3400 && code <= 0x4DBF) ||
+      (code >= 0x3040 && code <= 0x309F) ||
+      (code >= 0x30A0 && code <= 0x30FF) ||
+      (code >= 0xAC00 && code <= 0xD7AF)
+    ) {
+      tokens += 1.5;
+    } else {
+      tokens += 0.25;
+    }
+  }
+  return Math.ceil(tokens);
+}
+
+/**
  * OpenAI-compatible language model provider for a single vendor.
  * Implements the VS Code LanguageModelChatProvider interface.
  */
@@ -153,7 +187,9 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     token: vscode.CancellationToken
   ): Promise<void> {
     const apiKey = this.getApiKey();
-    const { baseUrl, displayName } = PROVIDER_METADATA[this.providerName];
+    const modelConfig = this.getModels().find((m) => m.id === model.id);
+    const baseUrl = modelConfig?.baseUrlOverride?.trim() || PROVIDER_METADATA[this.providerName].baseUrl;
+    const displayName = PROVIDER_METADATA[this.providerName].displayName;
 
     if (!apiKey) {
       throw new Error(
@@ -176,8 +212,6 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
             },
           }))
         : undefined;
-
-    const modelConfig = this.getModels().find((m) => m.id === model.id);
 
     const requestBody: Record<string, unknown> = {
       model: model.id,
@@ -210,8 +244,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         }
       } catch { /* use raw text as fallback */ }
 
-      const prefix = `${displayName} API error ${response.status}`;
-      throw new Error(`${prefix}: ${errorMessage}`);
+      throw new Error(getFriendlyErrorMessage(response.status, displayName, errorMessage));
     }
 
     if (!response.body) {
@@ -231,24 +264,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       : text.content
           .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
           .join('');
-
-    let tokens = 0;
-    for (const char of str) {
-      const code = char.codePointAt(0)!;
-      // CJK Unified Ideographs, CJK Radicals, Hiragana, Katakana, etc.
-      if (
-        (code >= 0x4E00 && code <= 0x9FFF) ||  // CJK Unified
-        (code >= 0x3400 && code <= 0x4DBF) ||  // CJK Extension A
-        (code >= 0x3040 && code <= 0x309F) ||  // Hiragana
-        (code >= 0x30A0 && code <= 0x30FF) ||  // Katakana
-        (code >= 0xAC00 && code <= 0xD7AF)     // Hangul
-      ) {
-        tokens += 1.5;  // CJK characters typically consume more tokens
-      } else {
-        tokens += 0.25; // ~4 chars per token for Latin text
-      }
-    }
-    return Math.ceil(tokens);
+    return estimateTokenCount(str);
   }
 
   private toModelInfo(m: ModelConfig): vscode.LanguageModelChatInformation {
@@ -294,17 +310,11 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         buffer = lines.pop() ?? '';
 
         for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed === 'data: [DONE]') {
-            continue;
-          }
-          if (!trimmed.startsWith('data: ')) {
-            continue;
-          }
-
           try {
-            const jsonStr = trimmed.slice('data: '.length);
-            const chunk: ChatCompletionChunk = JSON.parse(jsonStr);
+            const chunk = parseSSELine(line);
+            if (!chunk) {
+              continue;
+            }
             const choice = chunk.choices?.[0];
             if (!choice?.delta) {
               continue;

@@ -62,6 +62,10 @@
       {
         "vendor": "qwen",
         "displayName": "Qwen (Alibaba)"
+      },
+      {
+        "vendor": "custom",
+        "displayName": "Custom (OpenAI Compatible)"
       }
     ],
     "configuration": {
@@ -394,6 +398,51 @@
             }
           ],
           "description": "List of Qwen models to register. Each model requires id and name."
+        },
+        "openModel.custom.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable custom OpenAI-compatible provider"
+        },
+        "openModel.custom.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Base URL for the custom provider's API (e.g. http://localhost:11434/v1 for Ollama)"
+        },
+        "openModel.custom.vendorName": {
+          "type": "string",
+          "default": "Custom",
+          "description": "Display name for the custom provider"
+        },
+        "openModel.custom.models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Model ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "maxInputTokens": {
+                "type": "number",
+                "description": "Max input tokens"
+              },
+              "maxOutputTokens": {
+                "type": "number",
+                "description": "Max output tokens"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "default": [],
+          "description": "List of models for the custom provider"
         }
       }
     },
@@ -401,6 +450,16 @@
       {
         "command": "openModel.setApiKey",
         "title": "Open Model: Set API Key",
+        "category": "Open Model"
+      },
+      {
+        "command": "openModel.clearApiKey",
+        "title": "Open Model: Clear API Key",
+        "category": "Open Model"
+      },
+      {
+        "command": "openModel.testConnection",
+        "title": "Open Model: Test Connection",
         "category": "Open Model"
       },
       {
@@ -420,9 +479,11 @@
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.99.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
@@ -430,6 +491,7 @@
     "eslint": "^9.0.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.5.4",
+    "vitest": "^4.1.8",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
   },

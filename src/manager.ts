@@ -42,8 +42,12 @@ export class ProviderManager implements vscode.Disposable {
   /**
    * Get a provider's API key from the in-memory cache.
    */
-  private getApiKey(name: ProviderName): string {
+  getApiKey(name: ProviderName): string {
     return this.apiKeys.get(name) ?? '';
+  }
+
+  hasApiKey(name: ProviderName): boolean {
+    return !!this.apiKeys.get(name);
   }
 
   /**
