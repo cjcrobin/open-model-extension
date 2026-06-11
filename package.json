@@ -443,6 +443,66 @@
           },
           "default": [],
           "description": "List of models for the custom provider"
+        },
+        "openModel.kimi.requestParams": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
+            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
+            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
+            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
+            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+          },
+          "description": "Advanced request parameters for Kimi models"
+        },
+        "openModel.deepseek.requestParams": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
+            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
+            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
+            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
+            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+          },
+          "description": "Advanced request parameters for DeepSeek models"
+        },
+        "openModel.glm.requestParams": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
+            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
+            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
+            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
+            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+          },
+          "description": "Advanced request parameters for GLM models"
+        },
+        "openModel.qwen.requestParams": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
+            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
+            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
+            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
+            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+          },
+          "description": "Advanced request parameters for Qwen models"
+        },
+        "openModel.custom.requestParams": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
+            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
+            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
+            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
+            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+          },
+          "description": "Advanced request parameters for custom provider models"
         }
       }
     },
@@ -470,6 +530,11 @@
       {
         "command": "openModel.reload",
         "title": "Open Model: Reload Providers",
+        "category": "Open Model"
+      },
+      {
+        "command": "openModel.exportConfig",
+        "title": "Open Model: Export Configuration",
         "category": "Open Model"
       }
     ]

@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { ProviderManager } from './manager';
 import { PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from './types';
 import { getFriendlyErrorMessage } from './errors';
+import { UsageStore } from './storage/usageStore';
+import { exportConfigCommand } from './commands/exportConfig';
 
 let manager: ProviderManager | undefined;
 
@@ -27,6 +29,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   manager = new ProviderManager(output);
   context.subscriptions.push(manager);
+
+  const usageStore = new UsageStore(context);
+  context.subscriptions.push(usageStore);
+  manager.setUsageStore(usageStore);
 
   // Load API keys from secret storage into the manager's cache
   await loadApiKeys(context.secrets, manager, output);
@@ -211,6 +217,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         'openModel'
       );
     })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.exportConfig', exportConfigCommand)
   );
 
   output.appendLine('Open Model extension activated.');

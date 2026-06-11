@@ -26,9 +26,9 @@ export interface RequestParams {
   extra?: Record<string, unknown>;
 }
 
-export type ProviderName = 'kimi' | 'deepseek' | 'glm' | 'qwen';
+export type ProviderName = 'kimi' | 'deepseek' | 'glm' | 'qwen' | 'custom';
 
-export const PROVIDER_NAMES: readonly ProviderName[] = ['kimi', 'deepseek', 'glm', 'qwen'];
+export const PROVIDER_NAMES: readonly ProviderName[] = ['kimi', 'deepseek', 'glm', 'qwen', 'custom'];
 
 export const PROVIDER_METADATA: Record<
   ProviderName,
@@ -52,5 +52,9 @@ export const PROVIDER_METADATA: Record<
   qwen: {
     displayName: 'Qwen',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  },
+  custom: {
+    displayName: 'Custom',
+    baseUrl: '',
   },
 };

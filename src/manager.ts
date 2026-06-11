@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { ModelConfig, PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from './types';
 import { OpenAICompatProvider } from './provider';
+import { UsageStore } from './storage/usageStore';
+import { TokenUsageRecord } from './types/usage';
 
 interface ProviderEntry {
   registration: vscode.Disposable;
@@ -26,9 +28,14 @@ export class ProviderManager implements vscode.Disposable {
   private providers = new Map<ProviderName, ProviderEntry>();
   private apiKeys = new Map<ProviderName, string>();
   private readonly output: vscode.OutputChannel;
+  private usageStore?: UsageStore;
 
   constructor(output: vscode.OutputChannel) {
     this.output = output;
+  }
+
+  setUsageStore(store: UsageStore): void {
+    this.usageStore = store;
   }
 
   /**
@@ -64,7 +71,11 @@ export class ProviderManager implements vscode.Disposable {
         name,
         () => this.getApiKey(name),
         () => readProviderModels(name),
-        this.output
+        this.output,
+        name === 'custom' ? () => getNestedConfig<string>('custom', 'baseUrl', '') : undefined,
+        name === 'custom' ? () => getNestedConfig<string>('custom', 'vendorName', 'Custom') : undefined,
+        () => getNestedConfig<Record<string, unknown>>(name, 'requestParams', {}),
+        this.usageStore ? (record: TokenUsageRecord) => { this.usageStore!.addRecord(record); } : undefined
       );
 
       const registration = vscode.lm.registerLanguageModelChatProvider(

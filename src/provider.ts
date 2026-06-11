@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ModelConfig, PROVIDER_METADATA, ProviderName } from './types';
 import { getFriendlyErrorMessage } from './errors';
+import { TokenUsageRecord } from './types/usage';
 
 // LanguageModelThinkingPart is an internal VS Code API not yet in @types/vscode.
 // It renders a collapsible "Thinking..." block in Copilot Chat, identical to
@@ -37,6 +38,11 @@ export interface ChatCompletionChunk {
     };
     finish_reason?: string | null;
   }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    reasoning_tokens?: number;
+  };
 }
 
 /**
@@ -136,6 +142,24 @@ export function estimateTokenCount(text: string): number {
 }
 
 /**
+ * Convert camelCase request params to snake_case API parameters.
+ * The 'extra' field is spread directly into the request body.
+ */
+export function convertToApiParams(params: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue;
+    if (key === 'extra' && typeof value === 'object' && value !== null) {
+      Object.assign(result, value);
+    } else {
+      const snakeKey = key.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());
+      result[snakeKey] = value;
+    }
+  }
+  return result;
+}
+
+/**
  * OpenAI-compatible language model provider for a single vendor.
  * Implements the VS Code LanguageModelChatProvider interface.
  */
@@ -144,6 +168,10 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   private readonly getModels: () => ModelConfig[];
   private readonly getApiKey: () => string;
   private readonly output: vscode.OutputChannel;
+  private readonly getBaseUrl?: () => string;
+  private readonly getDisplayName?: () => string;
+  private readonly getRequestParams?: () => Record<string, unknown>;
+  private readonly onUsageRecord?: (record: TokenUsageRecord) => void;
 
   readonly onDidChangeLanguageModelChatInformation: vscode.Event<void>;
   private readonly _onDidChange: vscode.EventEmitter<void>;
@@ -152,12 +180,20 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     providerName: ProviderName,
     getApiKey: () => string,
     getModels: () => ModelConfig[],
-    output: vscode.OutputChannel
+    output: vscode.OutputChannel,
+    getBaseUrl?: () => string,
+    getDisplayName?: () => string,
+    getRequestParams?: () => Record<string, unknown>,
+    onUsageRecord?: (record: TokenUsageRecord) => void
   ) {
     this.providerName = providerName;
     this.getApiKey = getApiKey;
     this.getModels = getModels;
     this.output = output;
+    this.getBaseUrl = getBaseUrl;
+    this.getDisplayName = getDisplayName;
+    this.getRequestParams = getRequestParams;
+    this.onUsageRecord = onUsageRecord;
     this._onDidChange = new vscode.EventEmitter<void>();
     this.onDidChangeLanguageModelChatInformation = this._onDidChange.event;
   }
@@ -188,8 +224,12 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   ): Promise<void> {
     const apiKey = this.getApiKey();
     const modelConfig = this.getModels().find((m) => m.id === model.id);
-    const baseUrl = modelConfig?.baseUrlOverride?.trim() || PROVIDER_METADATA[this.providerName].baseUrl;
-    const displayName = PROVIDER_METADATA[this.providerName].displayName;
+    const baseUrl = modelConfig?.baseUrlOverride?.trim()
+      || (this.getBaseUrl ? this.getBaseUrl() : '')
+      || PROVIDER_METADATA[this.providerName].baseUrl;
+    const displayName = this.getDisplayName
+      ? this.getDisplayName()
+      : PROVIDER_METADATA[this.providerName].displayName;
 
     if (!apiKey) {
       throw new Error(
@@ -213,16 +253,23 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
           }))
         : undefined;
 
+    const userParams = this.getRequestParams?.() ?? {};
+    const apiParams = convertToApiParams(userParams);
+
     const requestBody: Record<string, unknown> = {
       model: model.id,
       messages: convertedMessages,
       stream: true,
+      stream_options: { include_usage: true },
+      ...apiParams,
       ...(modelConfig?.maxOutputTokens ? { max_tokens: modelConfig.maxOutputTokens } : {}),
       ...(tools ? { tools, tool_choice: 'auto' } : {}),
     };
 
     const abortController = new AbortController();
     token.onCancellationRequested(() => abortController.abort());
+
+    const startTime = Date.now();
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
@@ -251,7 +298,20 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       throw new Error(`${displayName} API returned no response body`);
     }
 
-    await this.streamResponse(response.body, progress, token);
+    const recordedUsage = await this.streamResponse(response.body, progress, token);
+
+    if (recordedUsage && this.onUsageRecord) {
+      this.onUsageRecord({
+        provider: this.providerName,
+        modelId: model.id,
+        modelName: model.name,
+        inputTokens: recordedUsage.prompt_tokens,
+        outputTokens: recordedUsage.completion_tokens,
+        reasoningTokens: recordedUsage.reasoning_tokens,
+        timestamp: new Date().toISOString(),
+        durationMs: Date.now() - startTime,
+      });
+    }
   }
 
   async provideTokenCount(
@@ -268,16 +328,20 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   }
 
   private toModelInfo(m: ModelConfig): vscode.LanguageModelChatInformation {
-    const { displayName } = PROVIDER_METADATA[this.providerName];
+    const displayName = this.getDisplayName
+      ? this.getDisplayName()
+      : PROVIDER_METADATA[this.providerName].displayName;
+    const modelName = m.supportsReasoning ? `${m.name} (Reasoning)` : m.name;
     return {
       id: m.id,
-      name: m.name,
+      name: modelName,
       family: displayName,
       version: m.id,
       maxInputTokens: m.maxInputTokens ?? 65536,
       maxOutputTokens: m.maxOutputTokens ?? 8192,
       capabilities: {
         toolCalling: true,
+        ...(m.supportsVision ? { imageInput: true } : {}),
       },
     };
   }
@@ -286,17 +350,16 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     body: ReadableStream<Uint8Array>,
     progress: vscode.Progress<vscode.LanguageModelResponsePart>,
     token: vscode.CancellationToken
-  ): Promise<void> {
+  ): Promise<{ prompt_tokens: number; completion_tokens: number; reasoning_tokens?: number } | undefined> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    // Track partial tool call accumulation across chunks
     const pendingToolCalls = new Map<
       number,
       { id: string; name: string; args: string }
     >();
-    // Track whether we have opened a ThinkingPart block
     let thinkingOpen = false;
+    let recordedUsage: { prompt_tokens: number; completion_tokens: number; reasoning_tokens?: number } | undefined;
 
     try {
       while (true) {
@@ -315,6 +378,11 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
             if (!chunk) {
               continue;
             }
+
+            if (chunk.usage) {
+              recordedUsage = chunk.usage;
+            }
+
             const choice = chunk.choices?.[0];
             if (!choice?.delta) {
               continue;
@@ -384,5 +452,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       }
       reader.releaseLock();
     }
+
+    return recordedUsage;
   }
 }
