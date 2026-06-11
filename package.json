@@ -536,6 +536,11 @@
         "command": "openModel.exportConfig",
         "title": "Open Model: Export Configuration",
         "category": "Open Model"
+      },
+      {
+        "command": "openModel.importConfig",
+        "title": "Open Model: Import Configuration",
+        "category": "Open Model"
       }
     ]
   },

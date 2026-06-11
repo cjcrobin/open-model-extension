@@ -4,6 +4,8 @@ import { PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from './types';
 import { getFriendlyErrorMessage } from './errors';
 import { UsageStore } from './storage/usageStore';
 import { exportConfigCommand } from './commands/exportConfig';
+import { importConfigCommand } from './commands/importConfig';
+import { createStatusBarItem, updateStatusBar } from './ui/statusBar';
 
 let manager: ProviderManager | undefined;
 
@@ -41,6 +43,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   manager.registerAll();
   manager.logStatus();
 
+  const statusBarItem = createStatusBarItem();
+  context.subscriptions.push(statusBarItem);
+
   // When settings change, notify Copilot that models may have changed
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
@@ -48,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         output.appendLine('\nConfiguration changed, refreshing model lists...');
         manager!.notifyAll();
         manager!.logStatus();
+        updateStatusBar(statusBarItem);
       }
     })
   );
@@ -221,6 +227,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.exportConfig', exportConfigCommand)
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.importConfig', importConfigCommand)
   );
 
   output.appendLine('Open Model extension activated.');
