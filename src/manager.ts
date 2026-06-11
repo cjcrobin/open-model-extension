@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
-import { ModelConfig, PROVIDER_METADATA, ProviderName } from './types';
+import { ModelConfig, PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from './types';
 import { OpenAICompatProvider } from './provider';
-
-const PROVIDER_NAMES: ProviderName[] = ['kimi', 'deepseek', 'glm', 'qwen'];
 
 interface ProviderEntry {
   registration: vscode.Disposable;
@@ -61,7 +59,8 @@ export class ProviderManager implements vscode.Disposable {
       const instance = new OpenAICompatProvider(
         name,
         () => this.getApiKey(name),
-        () => readProviderModels(name)
+        () => readProviderModels(name),
+        this.output
       );
 
       const registration = vscode.lm.registerLanguageModelChatProvider(

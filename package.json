@@ -47,10 +47,22 @@
   "main": "./dist/extension.js",
   "contributes": {
     "languageModelChatProviders": [
-      { "vendor": "kimi",     "displayName": "Kimi (Moonshot AI)" },
-      { "vendor": "deepseek", "displayName": "DeepSeek" },
-      { "vendor": "glm",      "displayName": "GLM (Zhipu AI)" },
-      { "vendor": "qwen",     "displayName": "Qwen (Alibaba)" }
+      {
+        "vendor": "kimi",
+        "displayName": "Kimi (Moonshot AI)"
+      },
+      {
+        "vendor": "deepseek",
+        "displayName": "DeepSeek"
+      },
+      {
+        "vendor": "glm",
+        "displayName": "GLM (Zhipu AI)"
+      },
+      {
+        "vendor": "qwen",
+        "displayName": "Qwen (Alibaba)"
+      }
     ],
     "configuration": {
       "title": "Open Model for Copilot Chat",
@@ -65,19 +77,73 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "description": "Model ID" },
-              "name": { "type": "string", "description": "Display name" },
-              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
-              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+              "id": {
+                "type": "string",
+                "description": "Model ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "maxInputTokens": {
+                "type": "number",
+                "description": "Max input tokens"
+              },
+              "maxOutputTokens": {
+                "type": "number",
+                "description": "Max output tokens"
+              },
+              "baseUrlOverride": {
+                "type": "string",
+                "description": "Override the default API base URL for this model (e.g. for proxy or self-hosted endpoints)"
+              },
+              "supportsVision": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model supports image/vision input"
+              },
+              "supportsReasoning": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              }
             },
-            "required": ["id", "name"]
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "default": [
-            { "id": "kimi-k2.6", "name": "Kimi K2.6", "maxInputTokens": 262144, "maxOutputTokens": 32768 },
-            { "id": "kimi-k2.5", "name": "Kimi K2.5", "maxInputTokens": 262144, "maxOutputTokens": 32768 },
-            { "id": "moonshot-v1-128k", "name": "Moonshot V1 128K", "maxInputTokens": 131072, "maxOutputTokens": 16384 },
-            { "id": "moonshot-v1-32k", "name": "Moonshot V1 32K", "maxInputTokens": 32768, "maxOutputTokens": 16384 },
-            { "id": "moonshot-v1-8k", "name": "Moonshot V1 8K", "maxInputTokens": 8192, "maxOutputTokens": 4096 }
+            {
+              "id": "kimi-k2.6",
+              "name": "Kimi K2.6",
+              "maxInputTokens": 262144,
+              "maxOutputTokens": 32768
+            },
+            {
+              "id": "kimi-k2.5",
+              "name": "Kimi K2.5",
+              "maxInputTokens": 262144,
+              "maxOutputTokens": 32768
+            },
+            {
+              "id": "moonshot-v1-128k",
+              "name": "Moonshot V1 128K",
+              "maxInputTokens": 131072,
+              "maxOutputTokens": 16384
+            },
+            {
+              "id": "moonshot-v1-32k",
+              "name": "Moonshot V1 32K",
+              "maxInputTokens": 32768,
+              "maxOutputTokens": 16384
+            },
+            {
+              "id": "moonshot-v1-8k",
+              "name": "Moonshot V1 8K",
+              "maxInputTokens": 8192,
+              "maxOutputTokens": 4096
+            }
           ],
           "description": "List of Kimi models to register. Each model requires id and name."
         },
@@ -91,18 +157,68 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "description": "Model ID" },
-              "name": { "type": "string", "description": "Display name" },
-              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
-              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+              "id": {
+                "type": "string",
+                "description": "Model ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "maxInputTokens": {
+                "type": "number",
+                "description": "Max input tokens"
+              },
+              "maxOutputTokens": {
+                "type": "number",
+                "description": "Max output tokens"
+              },
+              "baseUrlOverride": {
+                "type": "string",
+                "description": "Override the default API base URL for this model (e.g. for proxy or self-hosted endpoints)"
+              },
+              "supportsVision": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model supports image/vision input"
+              },
+              "supportsReasoning": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              }
             },
-            "required": ["id", "name"]
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "default": [
-            { "id": "deepseek-v4-flash", "name": "DeepSeek V4 Flash", "maxInputTokens": 1000000, "maxOutputTokens": 393216 },
-            { "id": "deepseek-v4-pro", "name": "DeepSeek V4 Pro", "maxInputTokens": 1000000, "maxOutputTokens": 393216 },
-            { "id": "deepseek-chat", "name": "DeepSeek V3 (Legacy)", "maxInputTokens": 65536, "maxOutputTokens": 8192 },
-            { "id": "deepseek-reasoner", "name": "DeepSeek R1 (Legacy)", "maxInputTokens": 65536, "maxOutputTokens": 32768 }
+            {
+              "id": "deepseek-v4-flash",
+              "name": "DeepSeek V4 Flash",
+              "maxInputTokens": 1000000,
+              "maxOutputTokens": 393216
+            },
+            {
+              "id": "deepseek-v4-pro",
+              "name": "DeepSeek V4 Pro",
+              "maxInputTokens": 1000000,
+              "maxOutputTokens": 393216
+            },
+            {
+              "id": "deepseek-chat",
+              "name": "DeepSeek V3 (Legacy)",
+              "maxInputTokens": 65536,
+              "maxOutputTokens": 8192
+            },
+            {
+              "id": "deepseek-reasoner",
+              "name": "DeepSeek R1 (Legacy)",
+              "maxInputTokens": 65536,
+              "maxOutputTokens": 32768,
+              "supportsReasoning": true
+            }
           ],
           "description": "List of DeepSeek models to register. Each model requires id and name."
         },
@@ -116,20 +232,79 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "description": "Model ID" },
-              "name": { "type": "string", "description": "Display name" },
-              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
-              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+              "id": {
+                "type": "string",
+                "description": "Model ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "maxInputTokens": {
+                "type": "number",
+                "description": "Max input tokens"
+              },
+              "maxOutputTokens": {
+                "type": "number",
+                "description": "Max output tokens"
+              },
+              "baseUrlOverride": {
+                "type": "string",
+                "description": "Override the default API base URL for this model (e.g. for proxy or self-hosted endpoints)"
+              },
+              "supportsVision": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model supports image/vision input"
+              },
+              "supportsReasoning": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              }
             },
-            "required": ["id", "name"]
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "default": [
-            { "id": "glm-5.1", "name": "GLM-5.1", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
-            { "id": "glm-5", "name": "GLM-5", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
-            { "id": "glm-5-turbo", "name": "GLM-5-Turbo", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
-            { "id": "glm-4.7", "name": "GLM-4.7", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
-            { "id": "glm-4.7-flash", "name": "GLM-4.7-Flash (Free)", "maxInputTokens": 200000, "maxOutputTokens": 131072 },
-            { "id": "glm-4-long", "name": "GLM-4-Long (1M context)", "maxInputTokens": 1000000, "maxOutputTokens": 4096 }
+            {
+              "id": "glm-5.1",
+              "name": "GLM-5.1",
+              "maxInputTokens": 200000,
+              "maxOutputTokens": 131072
+            },
+            {
+              "id": "glm-5",
+              "name": "GLM-5",
+              "maxInputTokens": 200000,
+              "maxOutputTokens": 131072
+            },
+            {
+              "id": "glm-5-turbo",
+              "name": "GLM-5-Turbo",
+              "maxInputTokens": 200000,
+              "maxOutputTokens": 131072
+            },
+            {
+              "id": "glm-4.7",
+              "name": "GLM-4.7",
+              "maxInputTokens": 200000,
+              "maxOutputTokens": 131072
+            },
+            {
+              "id": "glm-4.7-flash",
+              "name": "GLM-4.7-Flash (Free)",
+              "maxInputTokens": 200000,
+              "maxOutputTokens": 131072
+            },
+            {
+              "id": "glm-4-long",
+              "name": "GLM-4-Long (1M context)",
+              "maxInputTokens": 1000000,
+              "maxOutputTokens": 4096
+            }
           ],
           "description": "List of GLM models to register. Each model requires id and name."
         },
@@ -143,20 +318,80 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "description": "Model ID" },
-              "name": { "type": "string", "description": "Display name" },
-              "maxInputTokens": { "type": "number", "description": "Max input tokens" },
-              "maxOutputTokens": { "type": "number", "description": "Max output tokens" }
+              "id": {
+                "type": "string",
+                "description": "Model ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "maxInputTokens": {
+                "type": "number",
+                "description": "Max input tokens"
+              },
+              "maxOutputTokens": {
+                "type": "number",
+                "description": "Max output tokens"
+              },
+              "baseUrlOverride": {
+                "type": "string",
+                "description": "Override the default API base URL for this model (e.g. for proxy or self-hosted endpoints)"
+              },
+              "supportsVision": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model supports image/vision input"
+              },
+              "supportsReasoning": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              }
             },
-            "required": ["id", "name"]
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "default": [
-            { "id": "qwen3.6-plus", "name": "Qwen3.6-Plus", "maxInputTokens": 1000000, "maxOutputTokens": 32768 },
-            { "id": "qwen3.6-flash", "name": "Qwen3.6-Flash", "maxInputTokens": 1000000, "maxOutputTokens": 32768 },
-            { "id": "qwen3.6-max-preview", "name": "Qwen3.6-Max (Preview)", "maxInputTokens": 262144, "maxOutputTokens": 32768 },
-            { "id": "qwen3-235b-a22b", "name": "Qwen3-235B-A22B", "maxInputTokens": 131072, "maxOutputTokens": 32768 },
-            { "id": "qwen3-32b", "name": "Qwen3-32B", "maxInputTokens": 131072, "maxOutputTokens": 32768 },
-            { "id": "qwq-32b", "name": "QwQ-32B (Reasoning)", "maxInputTokens": 131072, "maxOutputTokens": 32768 }
+            {
+              "id": "qwen3.6-plus",
+              "name": "Qwen3.6-Plus",
+              "maxInputTokens": 1000000,
+              "maxOutputTokens": 32768
+            },
+            {
+              "id": "qwen3.6-flash",
+              "name": "Qwen3.6-Flash",
+              "maxInputTokens": 1000000,
+              "maxOutputTokens": 32768
+            },
+            {
+              "id": "qwen3.6-max-preview",
+              "name": "Qwen3.6-Max (Preview)",
+              "maxInputTokens": 262144,
+              "maxOutputTokens": 32768
+            },
+            {
+              "id": "qwen3-235b-a22b",
+              "name": "Qwen3-235B-A22B",
+              "maxInputTokens": 131072,
+              "maxOutputTokens": 32768
+            },
+            {
+              "id": "qwen3-32b",
+              "name": "Qwen3-32B",
+              "maxInputTokens": 131072,
+              "maxOutputTokens": 32768
+            },
+            {
+              "id": "qwq-32b",
+              "name": "QwQ-32B (Reasoning)",
+              "maxInputTokens": 131072,
+              "maxOutputTokens": 32768,
+              "supportsReasoning": true
+            }
           ],
           "description": "List of Qwen models to register. Each model requires id and name."
         }
@@ -197,5 +432,8 @@
     "typescript": "^5.5.4",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "2": "^3.0.0"
   }
 }

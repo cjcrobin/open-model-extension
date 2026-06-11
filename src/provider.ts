@@ -109,6 +109,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   private readonly providerName: ProviderName;
   private readonly getModels: () => ModelConfig[];
   private readonly getApiKey: () => string;
+  private readonly output: vscode.OutputChannel;
 
   readonly onDidChangeLanguageModelChatInformation: vscode.Event<void>;
   private readonly _onDidChange: vscode.EventEmitter<void>;
@@ -116,11 +117,13 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   constructor(
     providerName: ProviderName,
     getApiKey: () => string,
-    getModels: () => ModelConfig[]
+    getModels: () => ModelConfig[],
+    output: vscode.OutputChannel
   ) {
     this.providerName = providerName;
     this.getApiKey = getApiKey;
     this.getModels = getModels;
+    this.output = output;
     this._onDidChange = new vscode.EventEmitter<void>();
     this.onDidChangeLanguageModelChatInformation = this._onDidChange.event;
   }
@@ -199,9 +202,16 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `${displayName} API request failed (${response.status}): ${errorText}`
-      );
+      let errorMessage = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error?.message) {
+          errorMessage = errorJson.error.message;
+        }
+      } catch { /* use raw text as fallback */ }
+
+      const prefix = `${displayName} API error ${response.status}`;
+      throw new Error(`${prefix}: ${errorMessage}`);
     }
 
     if (!response.body) {
@@ -216,14 +226,29 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     text: string | vscode.LanguageModelChatRequestMessage,
     _token: vscode.CancellationToken
   ): Promise<number> {
-    // Simple approximation: 1 token ≈ 4 characters
-    const str =
-      typeof text === 'string'
-        ? text
-        : text.content
-            .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
-            .join('');
-    return Math.ceil(str.length / 4);
+    const str = typeof text === 'string'
+      ? text
+      : text.content
+          .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
+          .join('');
+
+    let tokens = 0;
+    for (const char of str) {
+      const code = char.codePointAt(0)!;
+      // CJK Unified Ideographs, CJK Radicals, Hiragana, Katakana, etc.
+      if (
+        (code >= 0x4E00 && code <= 0x9FFF) ||  // CJK Unified
+        (code >= 0x3400 && code <= 0x4DBF) ||  // CJK Extension A
+        (code >= 0x3040 && code <= 0x309F) ||  // Hiragana
+        (code >= 0x30A0 && code <= 0x30FF) ||  // Katakana
+        (code >= 0xAC00 && code <= 0xD7AF)     // Hangul
+      ) {
+        tokens += 1.5;  // CJK characters typically consume more tokens
+      } else {
+        tokens += 0.25; // ~4 chars per token for Latin text
+      }
+    }
+    return Math.ceil(tokens);
   }
 
   private toModelInfo(m: ModelConfig): vscode.LanguageModelChatInformation {
@@ -289,11 +314,14 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
 
             // Reasoning tokens (DeepSeek R1, Kimi Thinking, QwQ)
             // Use internal LanguageModelThinkingPart if available (shows collapsible
-            // "Thinking..." block like native models), otherwise discard.
+            // "Thinking..." block like native models), otherwise fall back to plain text.
             if (delta.reasoning_content) {
               if (ThinkingPart) {
                 progress.report(new ThinkingPart(delta.reasoning_content));
                 thinkingOpen = true;
+              } else {
+                // Fallback: output reasoning as plain text with a marker
+                progress.report(new vscode.LanguageModelTextPart(delta.reasoning_content));
               }
             }
 
@@ -323,7 +351,13 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
             if (choice.finish_reason === 'tool_calls') {
               for (const [, tc] of pendingToolCalls) {
                 let parsedArgs: object = {};
-                try { parsedArgs = JSON.parse(tc.args) as object; } catch { /* keep empty */ }
+                try { parsedArgs = JSON.parse(tc.args) as object; } catch {
+                  const argsPreview = tc.args.length > 200 ? tc.args.slice(0, 200) + '...' : tc.args;
+                  this.output.appendLine(
+                    `[${PROVIDER_METADATA[this.providerName].displayName}] ` +
+                    `Warning: Failed to parse tool call arguments for "${tc.name}": ${argsPreview}`
+                  );
+                }
                 progress.report(new vscode.LanguageModelToolCallPart(tc.id, tc.name, parsedArgs));
               }
               pendingToolCalls.clear();

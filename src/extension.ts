@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
 import { ProviderManager } from './manager';
-import { PROVIDER_METADATA, ProviderName } from './types';
-
-const PROVIDER_NAMES: ProviderName[] = ['kimi', 'deepseek', 'glm', 'qwen'];
+import { PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from './types';
 
 let manager: ProviderManager | undefined;
 
