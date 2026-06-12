@@ -590,6 +590,11 @@
         "command": "openModel.showUsage",
         "title": "Open Model: Show Usage Statistics",
         "category": "Open Model"
+      },
+      {
+        "command": "openModel.openConfigPanel",
+        "title": "Open Model: Open Configuration Panel",
+        "category": "Open Model"
       }
     ]
   },

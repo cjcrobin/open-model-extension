@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ModelConfig, PROVIDER_METADATA, ProviderName } from './types';
 import { getFriendlyErrorMessage } from './errors';
 import { TokenUsageRecord } from './types/usage';
+import { resolveSystemPrompt } from './utils/systemPrompt';
 
 // LanguageModelThinkingPart is an internal VS Code API not yet in @types/vscode.
 // It renders a collapsible "Thinking..." block in Copilot Chat, identical to
@@ -239,6 +240,11 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     }
 
     const convertedMessages = convertMessages(messages);
+
+    const systemPrompt = resolveSystemPrompt(this.providerName, model.id);
+    if (systemPrompt) {
+      convertedMessages.unshift({ role: 'system', content: systemPrompt });
+    }
 
     // Build tools array if tool calling is requested
     const tools =

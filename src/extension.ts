@@ -7,6 +7,7 @@ import { exportConfigCommand } from './commands/exportConfig';
 import { importConfigCommand } from './commands/importConfig';
 import { showUsageCommand } from './commands/showUsage';
 import { createStatusBarItem, updateStatusBar } from './ui/statusBar';
+import { ConfigPanel } from './webview/configPanel';
 
 let manager: ProviderManager | undefined;
 
@@ -236,6 +237,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.showUsage', showUsageCommand(usageStore))
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.openConfigPanel', () => {
+      ConfigPanel.show(context.extensionUri);
+    })
   );
 
   output.appendLine('Open Model extension activated.');
