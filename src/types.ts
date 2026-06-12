@@ -58,3 +58,14 @@ export const PROVIDER_METADATA: Record<
     baseUrl: '',
   },
 };
+
+export interface FetchedModel {
+  id: string;
+  object: string;
+  owned_by?: string;
+}
+
+export interface ModelsApiResponse {
+  object: string;
+  data: FetchedModel[];
+}
