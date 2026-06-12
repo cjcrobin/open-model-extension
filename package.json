@@ -503,6 +503,50 @@
             "extra": { "type": "object", "description": "Additional provider-specific parameters" }
           },
           "description": "Advanced request parameters for custom provider models"
+        },
+        "openModel.systemPrompts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Unique identifier for this prompt template" },
+              "name": { "type": "string", "description": "Display name for the template" },
+              "content": { "type": "string", "description": "The system prompt text" },
+              "providers": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Provider names this template applies to (empty = all providers)"
+              },
+              "modelIds": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Model IDs this template applies to (empty = all models)"
+              }
+            },
+            "required": ["id", "name", "content"]
+          },
+          "default": [
+            {
+              "id": "coding-assistant",
+              "name": "Coding Assistant",
+              "content": "You are an expert software engineer. Provide concise, accurate, and well-structured code solutions.",
+              "providers": [],
+              "modelIds": []
+            },
+            {
+              "id": "reasoning",
+              "name": "Reasoning Mode",
+              "content": "Think step by step before providing your answer. Show your reasoning process clearly.",
+              "providers": ["deepseek", "qwen"],
+              "modelIds": ["deepseek-reasoner", "qwq-32b"]
+            }
+          ],
+          "description": "Custom system prompt templates that are prepended to conversations"
+        },
+        "openModel.activeSystemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "ID of the currently active system prompt template (empty = no system prompt)"
         }
       }
     },
@@ -540,6 +584,11 @@
       {
         "command": "openModel.importConfig",
         "title": "Open Model: Import Configuration",
+        "category": "Open Model"
+      },
+      {
+        "command": "openModel.showUsage",
+        "title": "Open Model: Show Usage Statistics",
         "category": "Open Model"
       }
     ]
