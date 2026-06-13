@@ -21,3 +21,6 @@ Thumbs.db
 
 # coverage
 coverage/
+
+# task tracking
+tasks/
