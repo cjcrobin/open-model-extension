@@ -22,6 +22,7 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, and **Qwen** models into GitHub Copil
 - WebView configuration panel
 - Status bar indicator for enabled providers
 - Test connection command for API key verification
+- Automatic model discovery from provider APIs with manual refresh command
 
 ## Requirements
 
@@ -101,6 +102,7 @@ Add a custom model to a provider by editing the `models` array in settings:
 | **Open Model: Import Configuration** | Import config from a JSON file |
 | **Open Model: Show Usage Statistics** | Display token usage report in Output panel |
 | **Open Model: Open Configuration Panel** | Open the WebView configuration panel |
+| **Open Model: Refresh Models from API** | Fetch latest models from provider APIs and merge with existing config |
 
 ## Default Models
 
@@ -200,6 +202,11 @@ Test files are in `src/test/`:
 - `convertMessages.test.ts` — message format conversion
 - `streamParsing.test.ts` — SSE line parsing
 - `tokenCounting.test.ts` — CJK-aware token estimation
+- `modelsTypes.test.ts` — API response type definitions
+- `fetchModels.test.ts` — HTTP model fetching with mock
+- `mergeModels.test.ts` — fetched/existing model merging logic
+- `refreshProviderModels.test.ts` — provider refresh flow (fetch, merge, persist)
+- `extensionRefresh.test.ts` — startup auto-refresh and manual refresh command
 
 ### Local Integration Testing (Extension Host)
 
@@ -249,6 +256,7 @@ This is the primary way to test the extension end-to-end inside a real VS Code i
 | WebView panel | Run **Open Configuration Panel** → toggle providers, add/remove models |
 | System prompt | Set `openModel.activeSystemPrompt` to a template ID → send a chat |
 | Base URL override | Set `baseUrlOverride` on a model → check requests go to custom URL |
+| Model auto-refresh | Run **Refresh Models from API** → check Output channel for fetched model count |
 
 ### Package as VSIX
 
@@ -275,16 +283,17 @@ npm run lint
 
 ```
 src/
-  extension.ts          — Extension entry point, command registration
+  extension.ts          — Extension entry point, command registration, auto-refresh
   provider.ts           — OpenAI-compatible chat provider, SSE streaming
-  manager.ts            — Provider lifecycle management
-  types.ts              — Shared type definitions
+  manager.ts            — Provider lifecycle, API key cache, model refresh
+  types.ts              — Shared type definitions (ModelConfig, ProviderName, API types)
   errors.ts             — Friendly error messages
   retry.ts              — Exponential backoff retry logic
   commands/             — Command implementations (export/import config, usage stats)
   storage/              — Usage data persistence (globalState)
+  types/                — Usage type definitions (TokenUsageRecord, UsageSummary)
   ui/                   — Status bar indicator
-  utils/                — System prompt resolution
+  utils/                — System prompt, model fetching, model merging
   webview/              — WebView configuration panel
   test/                 — Unit tests (vitest)
 media/                  — WebView static assets (CSS/JS)
