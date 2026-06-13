@@ -595,6 +595,11 @@
         "command": "openModel.openConfigPanel",
         "title": "Open Model: Open Configuration Panel",
         "category": "Open Model"
+      },
+      {
+        "command": "openModel.refreshModels",
+        "title": "Open Model: Refresh Models from API",
+        "category": "Open Model"
       }
     ]
   },
