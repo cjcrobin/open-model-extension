@@ -3,6 +3,8 @@ import { ModelConfig, PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from './
 import { OpenAICompatProvider } from './provider';
 import { UsageStore } from './storage/usageStore';
 import { TokenUsageRecord } from './types/usage';
+import { fetchAvailableModels } from './utils/fetchModels';
+import { mergeFetchedModels } from './utils/mergeModels';
 
 interface ProviderEntry {
   registration: vscode.Disposable;
@@ -132,6 +134,44 @@ export class ProviderManager implements vscode.Disposable {
       }
     }
     this.output.appendLine('--- End Status ---\n');
+  }
+
+  async refreshProviderModels(name: ProviderName): Promise<void> {
+    const apiKey = this.getApiKey(name);
+    if (!apiKey) {
+      return;
+    }
+
+    const baseUrl = name === 'custom'
+      ? getNestedConfig<string>('custom', 'baseUrl', '')
+      : PROVIDER_METADATA[name].baseUrl;
+
+    if (!baseUrl) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    const timeout = setTimeout(() => abortController.abort(), 10000);
+
+    try {
+      const response = await fetchAvailableModels(baseUrl, apiKey, abortController.signal);
+      const existing = getNestedConfig<ModelConfig[]>(name, 'models', []);
+      const merged = mergeFetchedModels(response.data, existing);
+
+      await vscode.workspace
+        .getConfiguration(`openModel.${name}`)
+        .update('models', merged, vscode.ConfigurationTarget.Global);
+
+      this.output.appendLine(
+        `[${PROVIDER_METADATA[name].displayName}] Refreshed models: ${merged.length} model(s) available`,
+      );
+    } catch (err) {
+      this.output.appendLine(
+        `[${PROVIDER_METADATA[name].displayName}] Failed to refresh models: ${err}`,
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   dispose(): void {
