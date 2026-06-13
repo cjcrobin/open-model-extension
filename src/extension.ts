@@ -45,6 +45,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   manager.registerAll();
   manager.logStatus();
 
+  for (const name of PROVIDER_NAMES) {
+    const enabled = vscode.workspace.getConfiguration(`openModel.${name}`).get<boolean>('enabled', false);
+    if (enabled && manager.getApiKey(name)) {
+      manager.refreshProviderModels(name).catch(() => {});
+    }
+  }
+
   const statusBarItem = createStatusBarItem();
   context.subscriptions.push(statusBarItem);
 
@@ -242,6 +249,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.openConfigPanel', () => {
       ConfigPanel.show(context.extensionUri);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.refreshModels', async () => {
+      const refreshing: string[] = [];
+      for (const name of PROVIDER_NAMES) {
+        const enabled = vscode.workspace.getConfiguration(`openModel.${name}`).get<boolean>('enabled', false);
+        if (enabled && manager!.getApiKey(name)) {
+          refreshing.push(PROVIDER_METADATA[name].displayName);
+          manager!.refreshProviderModels(name).catch(() => {});
+        }
+      }
+      if (refreshing.length > 0) {
+        vscode.window.showInformationMessage(
+          `Open Model: Refreshing models for ${refreshing.join(', ')}...`,
+        );
+      } else {
+        vscode.window.showInformationMessage(
+          'Open Model: No enabled providers with API keys to refresh.',
+        );
+      }
     })
   );
 
