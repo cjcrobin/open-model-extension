@@ -25,6 +25,19 @@ export class LanguageModelToolResultPart {
   ) {}
 }
 
+export class LanguageModelDataPart {
+  static image(data: Uint8Array, mime: string): LanguageModelDataPart {
+    return new LanguageModelDataPart(data, mime);
+  }
+  static json(value: unknown, mime = 'application/json'): LanguageModelDataPart {
+    return new LanguageModelDataPart(new TextEncoder().encode(JSON.stringify(value)), mime);
+  }
+  static text(value: string, mime = 'text/plain'): LanguageModelDataPart {
+    return new LanguageModelDataPart(new TextEncoder().encode(value), mime);
+  }
+  constructor(public data: Uint8Array, public mimeType: string) {}
+}
+
 export enum ConfigurationTarget {
   Global = 1,
   Workspace = 2,

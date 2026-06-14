@@ -23,6 +23,7 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, and **Qwen** models into GitHub Copil
 - Status bar indicator for enabled providers
 - Test connection command for API key verification
 - Automatic model discovery from provider APIs with manual refresh command
+- Image/vision input for multimodal models (attach images directly in Copilot Chat)
 
 ## Requirements
 
@@ -107,41 +108,41 @@ Add a custom model to a provider by editing the `models` array in settings:
 ## Default Models
 
 ### Kimi (Moonshot AI)
-| Model ID | Name | Context | Max Output |
-|----------|------|---------|------------|
-| `kimi-k2.6` | Kimi K2.6 | 256K | 32K |
-| `kimi-k2.5` | Kimi K2.5 | 256K | 32K |
-| `moonshot-v1-128k` | Moonshot V1 128K | 128K | 16K |
-| `moonshot-v1-32k` | Moonshot V1 32K | 32K | 16K |
-| `moonshot-v1-8k` | Moonshot V1 8K | 8K | 4K |
+| Model ID | Name | Context | Max Output | Vision |
+|----------|------|---------|------------|--------|
+| `kimi-k2.6` | Kimi K2.6 | 256K | 32K | Yes |
+| `kimi-k2.5` | Kimi K2.5 | 256K | 32K | Yes |
+| `moonshot-v1-128k` | Moonshot V1 128K | 128K | 16K | |
+| `moonshot-v1-32k` | Moonshot V1 32K | 32K | 16K | |
+| `moonshot-v1-8k` | Moonshot V1 8K | 8K | 4K | |
 
 ### DeepSeek
-| Model ID | Name | Context | Max Output |
-|----------|------|---------|------------|
-| `deepseek-v4-flash` | DeepSeek V4 Flash | 1M | 384K |
-| `deepseek-v4-pro` | DeepSeek V4 Pro | 1M | 384K |
-| `deepseek-chat` | DeepSeek V3 (Legacy) | 64K | 8K |
-| `deepseek-reasoner` | DeepSeek R1 (Legacy) | 64K | 32K |
+| Model ID | Name | Context | Max Output | Vision |
+|----------|------|---------|------------|--------|
+| `deepseek-v4-flash` | DeepSeek V4 Flash | 1M | 384K | Yes |
+| `deepseek-v4-pro` | DeepSeek V4 Pro | 1M | 384K | Yes |
+| `deepseek-chat` | DeepSeek V3 (Legacy) | 64K | 8K | |
+| `deepseek-reasoner` | DeepSeek R1 (Legacy) | 64K | 32K | |
 
 ### GLM (Zhipu AI)
-| Model ID | Name | Context | Max Output |
-|----------|------|---------|------------|
-| `glm-5.1` | GLM-5.1 | 200K | 128K |
-| `glm-5` | GLM-5 | 200K | 128K |
-| `glm-5-turbo` | GLM-5-Turbo | 200K | 128K |
-| `glm-4.7` | GLM-4.7 | 200K | 128K |
-| `glm-4.7-flash` | GLM-4.7-Flash (Free) | 200K | 128K |
-| `glm-4-long` | GLM-4-Long | 1M | 4K |
+| Model ID | Name | Context | Max Output | Vision |
+|----------|------|---------|------------|--------|
+| `glm-5.1` | GLM-5.1 | 200K | 128K | Yes |
+| `glm-5` | GLM-5 | 200K | 128K | Yes |
+| `glm-5-turbo` | GLM-5-Turbo | 200K | 128K | |
+| `glm-4.7` | GLM-4.7 | 200K | 128K | Yes |
+| `glm-4.7-flash` | GLM-4.7-Flash (Free) | 200K | 128K | |
+| `glm-4-long` | GLM-4-Long | 1M | 4K | |
 
 ### Qwen (Alibaba Dashscope)
-| Model ID | Name | Context | Max Output |
-|----------|------|---------|------------|
-| `qwen3.6-plus` | Qwen3.6-Plus | 1M | 32K |
-| `qwen3.6-flash` | Qwen3.6-Flash | 1M | 32K |
-| `qwen3.6-max-preview` | Qwen3.6-Max (Preview) | 256K | 32K |
-| `qwen3-235b-a22b` | Qwen3-235B-A22B | 128K | 32K |
-| `qwen3-32b` | Qwen3-32B | 128K | 32K |
-| `qwq-32b` | QwQ-32B (Reasoning) | 128K | 32K |
+| Model ID | Name | Context | Max Output | Vision |
+|----------|------|---------|------------|--------|
+| `qwen3.6-plus` | Qwen3.6-Plus | 1M | 32K | Yes |
+| `qwen3.6-flash` | Qwen3.6-Flash | 1M | 32K | Yes |
+| `qwen3.6-max-preview` | Qwen3.6-Max (Preview) | 256K | 32K | |
+| `qwen3-235b-a22b` | Qwen3-235B-A22B | 128K | 32K | |
+| `qwen3-32b` | Qwen3-32B | 128K | 32K | |
+| `qwq-32b` | QwQ-32B (Reasoning) | 128K | 32K | |
 
 ## Development
 
@@ -257,6 +258,7 @@ This is the primary way to test the extension end-to-end inside a real VS Code i
 | System prompt | Set `openModel.activeSystemPrompt` to a template ID → send a chat |
 | Base URL override | Set `baseUrlOverride` on a model → check requests go to custom URL |
 | Model auto-refresh | Run **Refresh Models from API** → check Output channel for fetched model count |
+| Image input | Attach an image in Copilot Chat with a vision-capable model → verify model describes the image |
 
 ### Package as VSIX
 

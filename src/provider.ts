@@ -16,7 +16,7 @@ const ThinkingPart: new (text: string, id?: string, metadata?: object) => vscode
 
 export interface ChatCompletionMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string | null;
+  content: string | null | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
   tool_call_id?: string;
   tool_calls?: Array<{
     id: string;
@@ -64,8 +64,9 @@ export function convertMessages(
       role = 'system';
     }
 
-    // Collect text parts and tool result parts separately
+    // Collect text parts, image parts, and tool result parts separately
     const textParts: string[] = [];
+    const imageParts: Array<{ type: 'image_url'; image_url: { url: string } }> = [];
     const toolResults: Array<{ id: string; content: string }> = [];
     const toolCalls: Array<{ id: string; name: string; input: string }> = [];
 
@@ -83,6 +84,9 @@ export function convertMessages(
           .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
           .join('');
         toolResults.push({ id: part.callId, content });
+      } else if (part instanceof vscode.LanguageModelDataPart && part.mimeType.startsWith('image/')) {
+        const base64 = Buffer.from(part.data).toString('base64');
+        imageParts.push({ type: 'image_url', image_url: { url: `data:${part.mimeType};base64,${base64}` } });
       }
     }
 
@@ -101,6 +105,14 @@ export function convertMessages(
           function: { name: tc.name, arguments: tc.input },
         })),
       });
+    } else if (imageParts.length > 0) {
+      const content: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = [];
+      const text = textParts.join('');
+      if (text) {
+        content.push({ type: 'text', text });
+      }
+      content.push(...imageParts);
+      result.push({ role, content });
     } else {
       result.push({ role, content: textParts.join('') });
     }
@@ -325,12 +337,24 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     text: string | vscode.LanguageModelChatRequestMessage,
     _token: vscode.CancellationToken
   ): Promise<number> {
-    const str = typeof text === 'string'
-      ? text
-      : text.content
-          .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
-          .join('');
-    return estimateTokenCount(str);
+    if (typeof text === 'string') {
+      return estimateTokenCount(text);
+    }
+
+    let imageCount = 0;
+    const str = text.content
+      .map((p) => {
+        if (p instanceof vscode.LanguageModelTextPart) {
+          return p.value;
+        }
+        if (p instanceof vscode.LanguageModelDataPart && p.mimeType.startsWith('image/')) {
+          imageCount++;
+        }
+        return '';
+      })
+      .join('');
+
+    return estimateTokenCount(str) + imageCount * 85;
   }
 
   private toModelInfo(m: ModelConfig): vscode.LanguageModelChatInformation {
