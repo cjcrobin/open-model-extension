@@ -1,0 +1,49 @@
+name: CI Build
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: ${{ github.event_name == 'pull_request' && 'PR Build' || 'Official Build' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: PR build (development)
+        if: github.event_name == 'pull_request'
+        run: npm run compile
+
+      - name: Official build (production)
+        if: github.event_name == 'push'
+        run: npm run package
+
+      - name: Package .vsix
+        if: github.event_name == 'push'
+        run: npx @vscode/vsce package --no-dependencies
+
+      - name: Upload .vsix artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-package
+          path: '*.vsix'
