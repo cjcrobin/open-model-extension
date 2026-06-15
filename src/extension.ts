@@ -11,6 +11,10 @@ import { ConfigPanel } from './webview/configPanel';
 
 let manager: ProviderManager | undefined;
 
+function log(output: vscode.OutputChannel, message: string): void {
+  output.appendLine(`[${new Date().toISOString()}] ${message}`);
+}
+
 async function loadApiKeys(
   secrets: vscode.SecretStorage,
   manager: ProviderManager,
@@ -20,9 +24,7 @@ async function loadApiKeys(
     const key = await secrets.get(`openModel.${name}.apiKey`);
     if (key) {
       manager.setApiKey(name, key);
-      output.appendLine(
-        `[${PROVIDER_METADATA[name].displayName}] API key loaded from secret storage`
-      );
+      log(output, `[${PROVIDER_METADATA[name].displayName}] API key loaded from secret storage`);
     }
   }
 }
@@ -48,7 +50,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   for (const name of PROVIDER_NAMES) {
     const enabled = vscode.workspace.getConfiguration(`openModel.${name}`).get<boolean>('enabled', false);
     if (enabled && manager.getApiKey(name)) {
-      manager.refreshProviderModels(name).catch(() => {});
+      log(output, `[${PROVIDER_METADATA[name].displayName}] Starting auto-refresh models...`);
+      manager.refreshProviderModels(name).catch((err) => {
+        log(output, `[${PROVIDER_METADATA[name].displayName}] Auto-refresh failed: ${err}`);
+      });
     }
   }
 
@@ -59,7 +64,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('openModel')) {
-        output.appendLine('\nConfiguration changed, refreshing model lists...');
+        log(output, 'Configuration changed, refreshing model lists...');
         manager!.notifyAll();
         manager!.logStatus();
         updateStatusBar(statusBarItem);
@@ -70,7 +75,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // Register commands
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.reload', () => {
-      output.appendLine('\nManual refresh triggered...');
+      log(output, 'Manual refresh triggered');
       manager!.notifyAll();
       manager!.logStatus();
       vscode.window.showInformationMessage('Open Model: Model lists refreshed.');
@@ -131,9 +136,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // Update the in-memory cache
       manager!.setApiKey(providerName, apiKey.trim());
 
-      output.appendLine(
-        `[${displayName}] API key updated via secret storage`
-      );
+      log(output, `[${displayName}] API key set via command`);
       vscode.window.showInformationMessage(
         `Open Model: ${displayName} API key saved securely.`
       );
@@ -163,6 +166,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const providerName = pick.description as ProviderName;
       await context.secrets.delete(`openModel.${providerName}.apiKey`);
       manager!.setApiKey(providerName, '');
+      log(output, `[${PROVIDER_METADATA[providerName].displayName}] API key cleared`);
       manager!.notifyAll();
       manager!.logStatus();
 
@@ -193,11 +197,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const { baseUrl, displayName } = PROVIDER_METADATA[providerName];
 
       if (!apiKey) {
+        log(output, `[${displayName}] Test connection skipped: no API key`);
         vscode.window.showErrorMessage(
           `${displayName} API key is not configured. Use "Open Model: Set API Key" first.`
         );
         return;
       }
+
+      log(output, `[${displayName}] Testing connection to ${baseUrl}/models...`);
 
       await vscode.window.withProgress(
         {
@@ -210,14 +217,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               headers: { Authorization: `Bearer ${apiKey}` },
             });
             if (response.ok) {
+              log(output, `[${displayName}] Connection test successful (HTTP ${response.status})`);
               vscode.window.showInformationMessage(`${displayName}: Connection successful!`);
             } else {
               const errorText = await response.text();
+              log(output, `[${displayName}] Connection test failed: HTTP ${response.status} — ${errorText.slice(0, 200)}`);
               vscode.window.showErrorMessage(
                 getFriendlyErrorMessage(response.status, displayName, errorText)
               );
             }
           } catch (err) {
+            log(output, `[${displayName}] Connection test error: ${err}`);
             vscode.window.showErrorMessage(`${displayName}: Connection failed - ${err}`);
           }
         }
@@ -248,6 +258,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.openConfigPanel', () => {
+      log(output, 'Configuration panel opened');
       ConfigPanel.show(context.extensionUri);
     })
   );
@@ -259,7 +270,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         const enabled = vscode.workspace.getConfiguration(`openModel.${name}`).get<boolean>('enabled', false);
         if (enabled && manager!.getApiKey(name)) {
           refreshing.push(PROVIDER_METADATA[name].displayName);
-          manager!.refreshProviderModels(name).catch(() => {});
+          log(output, `[${PROVIDER_METADATA[name].displayName}] Refreshing models from API...`);
+          manager!.refreshProviderModels(name).catch((err) => {
+            log(output, `[${PROVIDER_METADATA[name].displayName}] Refresh command failed: ${err}`);
+          });
         }
       }
       if (refreshing.length > 0) {
@@ -267,6 +281,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           `Open Model: Refreshing models for ${refreshing.join(', ')}...`,
         );
       } else {
+        log(output, 'Refresh command: no enabled providers with API keys');
         vscode.window.showInformationMessage(
           'Open Model: No enabled providers with API keys to refresh.',
         );
@@ -274,7 +289,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
-  output.appendLine('Open Model extension activated.');
+  log(output, 'Open Model extension activated.');
 }
 
 export function deactivate(): void {

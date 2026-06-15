@@ -238,13 +238,17 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     this._onDidChange.fire();
   }
 
+  private log(message: string): void {
+    const ts = new Date().toISOString();
+    this.output.appendLine(`[${ts}] [${this.providerName}] ${message}`);
+  }
+
   dispose(): void {
     this._onDidChange.dispose();
   }
 
   private async applyImageUnderstanding(
     messages: ChatCompletionMessage[],
-    displayName: string,
   ): Promise<void> {
     const hasImages = messages.some(
       (m) =>
@@ -256,14 +260,14 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       return;
     }
 
+    this.log('Image(s) detected in request for non-vision model');
+
     const imageConfig = vscode.workspace
       .getConfiguration('openModel')
       .get<ImageUnderstandingConfig>('imageUnderstandingModel', { provider: '', modelId: '' });
 
     if (!imageConfig.provider || !imageConfig.modelId || !this.getProviderApiKey) {
-      this.output.appendLine(
-        `[${displayName}] Non-vision model received images but no imageUnderstandingModel configured. Stripping images.`,
-      );
+      this.log('No imageUnderstandingModel configured. Stripping images.');
       stripImagesFromMessages(messages);
       return;
     }
@@ -276,9 +280,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         : PROVIDER_METADATA[visionProvider]?.baseUrl ?? '';
 
     if (!visionApiKey || !visionBaseUrl) {
-      this.output.appendLine(
-        `[${displayName}] Image understanding configured but ${imageConfig.provider} API key or base URL not set. Stripping images.`,
-      );
+      this.log(`Image understanding configured (${imageConfig.provider}/${imageConfig.modelId}) but API key or base URL missing. Stripping images.`);
       stripImagesFromMessages(messages);
       return;
     }
@@ -294,6 +296,8 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       }
     }
 
+    this.log(`Requesting image description via ${imageConfig.provider}/${imageConfig.modelId} (${imageUrls.length} image(s))`);
+
     try {
       const descriptions = await describeImages(imageUrls, visionBaseUrl, visionApiKey, imageConfig.modelId);
 
@@ -303,10 +307,9 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
           const newContent: Array<{ type: 'text'; text: string }> = [];
           for (const part of m.content) {
             if (typeof part === 'object' && part !== null && (part as Record<string, unknown>).type === 'image_url') {
-              newContent.push({
-                type: 'text',
-                text: `[Image description: ${descriptions[descIndex] ?? 'Unable to describe'}]`,
-              });
+              const desc = descriptions[descIndex] ?? 'Unable to describe';
+              newContent.push({ type: 'text', text: `[Image description: ${desc}]` });
+              this.log(`Image ${descIndex + 1}: ${desc.length > 100 ? desc.slice(0, 100) + '...' : desc}`);
               descIndex++;
             } else {
               newContent.push(part as { type: 'text'; text: string });
@@ -326,11 +329,9 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         }
       }
 
-      this.output.appendLine(
-        `[${displayName}] Used ${imageConfig.provider}/${imageConfig.modelId} to describe ${imageUrls.length} image(s)`,
-      );
+      this.log(`Image understanding completed: ${imageUrls.length} image(s) described`);
     } catch (err) {
-      this.output.appendLine(`[${displayName}] Image understanding failed: ${err}`);
+      this.log(`Image understanding failed: ${err}`);
       stripImagesFromMessages(messages);
     }
   }
@@ -366,15 +367,18 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       );
     }
 
+    this.log(`Chat request: model=${model.id}, baseUrl=${baseUrl}, messages=${messages.length}`);
+
     const convertedMessages = convertMessages(messages);
 
     if (!modelConfig?.supportsVision) {
-      await this.applyImageUnderstanding(convertedMessages, displayName);
+      await this.applyImageUnderstanding(convertedMessages);
     }
 
     const systemPrompt = resolveSystemPrompt(this.providerName, model.id);
     if (systemPrompt) {
       convertedMessages.unshift({ role: 'system', content: systemPrompt });
+      this.log(`System prompt injected (${systemPrompt.length} chars)`);
     }
 
     // Build tools array if tool calling is requested
@@ -428,14 +432,31 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         }
       } catch { /* use raw text as fallback */ }
 
+      this.log(`API error: HTTP ${response.status} — ${errorMessage}`);
       throw new Error(getFriendlyErrorMessage(response.status, displayName, errorMessage));
     }
 
     if (!response.body) {
+      this.log('API error: empty response body');
       throw new Error(`${displayName} API returned no response body`);
     }
 
     const recordedUsage = await this.streamResponse(response.body, progress, token);
+
+    const durationMs = Date.now() - startTime;
+    if (recordedUsage) {
+      this.log(
+        `Chat completed in ${durationMs}ms — ` +
+        `tokens: ${recordedUsage.prompt_tokens} in / ${recordedUsage.completion_tokens} out` +
+        (recordedUsage.reasoning_tokens ? ` / ${recordedUsage.reasoning_tokens} reasoning` : ''),
+      );
+    } else {
+      this.log(`Chat completed in ${durationMs}ms (no usage data returned)`);
+    }
+
+    if (token.isCancellationRequested) {
+      this.log('Request cancelled by user');
+    }
 
     if (recordedUsage && this.onUsageRecord) {
       this.onUsageRecord({
@@ -446,7 +467,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         outputTokens: recordedUsage.completion_tokens,
         reasoningTokens: recordedUsage.reasoning_tokens,
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - startTime,
+        durationMs,
       });
     }
   }
@@ -586,17 +607,16 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
                 let parsedArgs: object = {};
                 try { parsedArgs = JSON.parse(tc.args) as object; } catch {
                   const argsPreview = tc.args.length > 200 ? tc.args.slice(0, 200) + '...' : tc.args;
-                  this.output.appendLine(
-                    `[${PROVIDER_METADATA[this.providerName].displayName}] ` +
-                    `Warning: Failed to parse tool call arguments for "${tc.name}": ${argsPreview}`
+                this.log(
+                    `Warning: Failed to parse tool call arguments for "${tc.name}": ${argsPreview}`,
                   );
                 }
                 progress.report(new vscode.LanguageModelToolCallPart(tc.id, tc.name, parsedArgs));
               }
               pendingToolCalls.clear();
             }
-          } catch {
-            // Skip malformed SSE lines
+          } catch (e) {
+            this.log(`Warning: Malformed SSE line skipped: ${line.length > 100 ? line.slice(0, 100) + '...' : line}`);
           }
         }
       }

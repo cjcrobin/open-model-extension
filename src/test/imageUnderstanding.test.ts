@@ -123,7 +123,7 @@ describe('Image understanding fallback', () => {
       'deepseek-v4-flash',
     );
     expect(output.appendLine).toHaveBeenCalledWith(
-      expect.stringContaining('Used deepseek/deepseek-v4-flash to describe 1 image(s)'),
+      expect.stringContaining('Image understanding completed: 1 image(s) described'),
     );
   });
 
@@ -140,7 +140,7 @@ describe('Image understanding fallback', () => {
 
     expect(mockDescribeImages).not.toHaveBeenCalled();
     expect(output.appendLine).toHaveBeenCalledWith(
-      expect.stringContaining('no imageUnderstandingModel configured'),
+      expect.stringContaining('No imageUnderstandingModel configured'),
     );
   });
 
@@ -184,7 +184,7 @@ describe('Image understanding fallback', () => {
 
     expect(mockDescribeImages).not.toHaveBeenCalled();
     expect(output.appendLine).toHaveBeenCalledWith(
-      expect.stringContaining('API key or base URL not set'),
+      expect.stringContaining('API key or base URL missing'),
     );
   });
 

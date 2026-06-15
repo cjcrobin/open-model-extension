@@ -36,16 +36,17 @@ export class ProviderManager implements vscode.Disposable {
     this.output = output;
   }
 
+  private log(message: string): void {
+    this.output.appendLine(`[${new Date().toISOString()}] ${message}`);
+  }
+
   setUsageStore(store: UsageStore): void {
     this.usageStore = store;
   }
 
-  /**
-   * Set a provider's API key in the in-memory cache.
-   * Call this after storing it in SecretStorage.
-   */
   setApiKey(name: ProviderName, key: string): void {
     this.apiKeys.set(name, key);
+    this.log(`[${PROVIDER_METADATA[name].displayName}] API key ${key ? 'set' : 'cleared'} in memory cache`);
   }
 
   /**
@@ -87,26 +88,22 @@ export class ProviderManager implements vscode.Disposable {
       );
 
       this.providers.set(name, { registration, instance });
-      this.output.appendLine(
-        `[${PROVIDER_METADATA[name].displayName}] Provider registered (vendor: ${name})`
-      );
+      this.log(`[${PROVIDER_METADATA[name].displayName}] Provider registered`);
     }
   }
 
-  /**
-   * Notify Copilot that models may have changed (e.g. after settings update).
-   */
   notifyAll(): void {
     for (const [, entry] of this.providers) {
       entry.instance.notifyChange();
     }
+    this.log(`Notified ${this.providers.size} provider(s) of model changes`);
   }
 
   /**
    * Log current enabled state and warn about missing API keys.
    */
   logStatus(): void {
-    this.output.appendLine('\n--- Provider Status ---');
+    this.log('--- Provider Status ---');
     for (const name of PROVIDER_NAMES) {
       const enabled = getNestedConfig<boolean>(name, 'enabled', false);
       const apiKey = this.getApiKey(name);
@@ -114,12 +111,12 @@ export class ProviderManager implements vscode.Disposable {
       const { displayName } = PROVIDER_METADATA[name];
 
       if (!enabled) {
-        this.output.appendLine(`[${displayName}] Disabled`);
+        this.log(`[${displayName}] Disabled`);
         continue;
       }
 
       if (!apiKey) {
-        this.output.appendLine(`[${displayName}] Enabled but API key is missing!`);
+        this.log(`[${displayName}] Enabled but API key is missing!`);
         vscode.window.showWarningMessage(
           `Open Model: ${displayName} is enabled but has no API key. ` +
             `Use "Open Model: Set API Key" command to set it.`
@@ -127,19 +124,18 @@ export class ProviderManager implements vscode.Disposable {
         continue;
       }
 
-      this.output.appendLine(
-        `[${displayName}] Enabled with ${models.length} model(s)`
-      );
+      this.log(`[${displayName}] Enabled with ${models.length} model(s)`);
       for (const m of models) {
-        this.output.appendLine(`  - ${m.name} (${m.id})`);
+        this.log(`  - ${m.name} (${m.id})`);
       }
     }
-    this.output.appendLine('--- End Status ---\n');
+    this.log('--- End Status ---');
   }
 
   async refreshProviderModels(name: ProviderName): Promise<void> {
     const apiKey = this.getApiKey(name);
     if (!apiKey) {
+      this.log(`[${PROVIDER_METADATA[name].displayName}] Skipping model refresh: no API key`);
       return;
     }
 
@@ -148,8 +144,11 @@ export class ProviderManager implements vscode.Disposable {
       : PROVIDER_METADATA[name].baseUrl;
 
     if (!baseUrl) {
+      this.log(`[${PROVIDER_METADATA[name].displayName}] Skipping model refresh: no base URL`);
       return;
     }
+
+    this.log(`[${PROVIDER_METADATA[name].displayName}] Fetching models from ${baseUrl}/models...`);
 
     const abortController = new AbortController();
     const timeout = setTimeout(() => abortController.abort(), 10000);
@@ -163,26 +162,22 @@ export class ProviderManager implements vscode.Disposable {
         .getConfiguration(`openModel.${name}`)
         .update('models', merged, vscode.ConfigurationTarget.Global);
 
-      this.output.appendLine(
-        `[${PROVIDER_METADATA[name].displayName}] Refreshed models: ${merged.length} model(s) available`,
-      );
+      this.log(`[${PROVIDER_METADATA[name].displayName}] Refreshed: ${merged.length} model(s) (was ${existing.length})`);
     } catch (err) {
-      this.output.appendLine(
-        `[${PROVIDER_METADATA[name].displayName}] Failed to refresh models: ${err}`,
-      );
+      this.log(`[${PROVIDER_METADATA[name].displayName}] Failed to refresh models: ${err}`);
     } finally {
       clearTimeout(timeout);
     }
   }
 
   dispose(): void {
+    this.log('Disposing all providers...');
     for (const [name, entry] of this.providers) {
       entry.registration.dispose();
       entry.instance.dispose();
-      this.output.appendLine(
-        `[${PROVIDER_METADATA[name].displayName}] Provider unregistered`
-      );
+      this.log(`[${PROVIDER_METADATA[name].displayName}] Provider unregistered`);
     }
     this.providers.clear();
+    this.log('Extension deactivated');
   }
 }

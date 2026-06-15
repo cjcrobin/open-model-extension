@@ -82,7 +82,7 @@ describe('ProviderManager.refreshProviderModels', () => {
     expect(updatedModels[1]).toEqual({ id: 'new-model', name: 'new-model' });
 
     expect(output.appendLine).toHaveBeenCalledWith(
-      expect.stringContaining('Refreshed models: 2 model(s) available'),
+      expect.stringContaining('Refreshed: 2 model(s)'),
     );
   });
 
