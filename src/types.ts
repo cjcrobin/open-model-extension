@@ -69,3 +69,8 @@ export interface ModelsApiResponse {
   object: string;
   data: FetchedModel[];
 }
+
+export interface ImageUnderstandingConfig {
+  provider: ProviderName | '';
+  modelId: string;
+}

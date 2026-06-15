@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { ModelConfig, PROVIDER_METADATA, ProviderName } from './types';
+import { ModelConfig, PROVIDER_METADATA, ProviderName, ImageUnderstandingConfig } from './types';
 import { getFriendlyErrorMessage } from './errors';
 import { TokenUsageRecord } from './types/usage';
 import { resolveSystemPrompt } from './utils/systemPrompt';
+import { describeImages } from './utils/describeImages';
 
 // LanguageModelThinkingPart is an internal VS Code API not yet in @types/vscode.
 // It renders a collapsible "Thinking..." block in Copilot Chat, identical to
@@ -16,7 +17,7 @@ const ThinkingPart: new (text: string, id?: string, metadata?: object) => vscode
 
 export interface ChatCompletionMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string | null;
+  content: string | null | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
   tool_call_id?: string;
   tool_calls?: Array<{
     id: string;
@@ -64,8 +65,9 @@ export function convertMessages(
       role = 'system';
     }
 
-    // Collect text parts and tool result parts separately
+    // Collect text parts, image parts, and tool result parts separately
     const textParts: string[] = [];
+    const imageParts: Array<{ type: 'image_url'; image_url: { url: string } }> = [];
     const toolResults: Array<{ id: string; content: string }> = [];
     const toolCalls: Array<{ id: string; name: string; input: string }> = [];
 
@@ -83,6 +85,16 @@ export function convertMessages(
           .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
           .join('');
         toolResults.push({ id: part.callId, content });
+      } else if (
+        part &&
+        typeof part === 'object' &&
+        typeof (part as Record<string, unknown>).mimeType === 'string' &&
+        (part as Record<string, unknown>).data instanceof Uint8Array &&
+        (part as { mimeType: string }).mimeType.startsWith('image/')
+      ) {
+        const imagePart = part as { mimeType: string; data: Uint8Array };
+        const base64 = Buffer.from(imagePart.data).toString('base64');
+        imageParts.push({ type: 'image_url', image_url: { url: `data:${imagePart.mimeType};base64,${base64}` } });
       }
     }
 
@@ -101,6 +113,14 @@ export function convertMessages(
           function: { name: tc.name, arguments: tc.input },
         })),
       });
+    } else if (imageParts.length > 0) {
+      const content: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = [];
+      const text = textParts.join('');
+      if (text) {
+        content.push({ type: 'text', text });
+      }
+      content.push(...imageParts);
+      result.push({ role, content });
     } else {
       result.push({ role, content: textParts.join('') });
     }
@@ -160,6 +180,17 @@ export function convertToApiParams(params: Record<string, unknown>): Record<stri
   return result;
 }
 
+function stripImagesFromMessages(messages: ChatCompletionMessage[]): void {
+  for (const m of messages) {
+    if (Array.isArray(m.content)) {
+      const textOnly = m.content.filter(
+        (p) => typeof p === 'object' && p !== null && (p as Record<string, unknown>).type === 'text',
+      ) as Array<{ type: 'text'; text: string }>;
+      m.content = textOnly.map((p) => p.text).join('') || '';
+    }
+  }
+}
+
 /**
  * OpenAI-compatible language model provider for a single vendor.
  * Implements the VS Code LanguageModelChatProvider interface.
@@ -173,6 +204,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   private readonly getDisplayName?: () => string;
   private readonly getRequestParams?: () => Record<string, unknown>;
   private readonly onUsageRecord?: (record: TokenUsageRecord) => void;
+  private readonly getProviderApiKey?: (provider: ProviderName) => string;
 
   readonly onDidChangeLanguageModelChatInformation: vscode.Event<void>;
   private readonly _onDidChange: vscode.EventEmitter<void>;
@@ -185,7 +217,8 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     getBaseUrl?: () => string,
     getDisplayName?: () => string,
     getRequestParams?: () => Record<string, unknown>,
-    onUsageRecord?: (record: TokenUsageRecord) => void
+    onUsageRecord?: (record: TokenUsageRecord) => void,
+    getProviderApiKey?: (provider: ProviderName) => string
   ) {
     this.providerName = providerName;
     this.getApiKey = getApiKey;
@@ -195,6 +228,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     this.getDisplayName = getDisplayName;
     this.getRequestParams = getRequestParams;
     this.onUsageRecord = onUsageRecord;
+    this.getProviderApiKey = getProviderApiKey;
     this._onDidChange = new vscode.EventEmitter<void>();
     this.onDidChangeLanguageModelChatInformation = this._onDidChange.event;
   }
@@ -204,8 +238,102 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     this._onDidChange.fire();
   }
 
+  private log(message: string): void {
+    const ts = new Date().toISOString();
+    this.output.appendLine(`[${ts}] [${this.providerName}] ${message}`);
+  }
+
   dispose(): void {
     this._onDidChange.dispose();
+  }
+
+  private async applyImageUnderstanding(
+    messages: ChatCompletionMessage[],
+  ): Promise<void> {
+    const hasImages = messages.some(
+      (m) =>
+        Array.isArray(m.content) &&
+        m.content.some((p) => typeof p === 'object' && p !== null && (p as Record<string, unknown>).type === 'image_url'),
+    );
+
+    if (!hasImages) {
+      return;
+    }
+
+    this.log('Image(s) detected in request for non-vision model');
+
+    const imageConfig = vscode.workspace
+      .getConfiguration('openModel')
+      .get<ImageUnderstandingConfig>('imageUnderstandingModel', { provider: '', modelId: '' });
+
+    if (!imageConfig.provider || !imageConfig.modelId || !this.getProviderApiKey) {
+      this.log('No imageUnderstandingModel configured. Stripping images.');
+      stripImagesFromMessages(messages);
+      return;
+    }
+
+    const visionProvider = imageConfig.provider as ProviderName;
+    const visionApiKey = this.getProviderApiKey(visionProvider);
+    const visionBaseUrl =
+      visionProvider === 'custom'
+        ? vscode.workspace.getConfiguration('openModel.custom').get<string>('baseUrl', '')
+        : PROVIDER_METADATA[visionProvider]?.baseUrl ?? '';
+
+    if (!visionApiKey || !visionBaseUrl) {
+      this.log(`Image understanding configured (${imageConfig.provider}/${imageConfig.modelId}) but API key or base URL missing. Stripping images.`);
+      stripImagesFromMessages(messages);
+      return;
+    }
+
+    const imageUrls: string[] = [];
+    for (const m of messages) {
+      if (Array.isArray(m.content)) {
+        for (const part of m.content) {
+          if (typeof part === 'object' && part !== null && (part as Record<string, unknown>).type === 'image_url') {
+            imageUrls.push((part as { image_url: { url: string } }).image_url.url);
+          }
+        }
+      }
+    }
+
+    this.log(`Requesting image description via ${imageConfig.provider}/${imageConfig.modelId} (${imageUrls.length} image(s))`);
+
+    try {
+      const descriptions = await describeImages(imageUrls, visionBaseUrl, visionApiKey, imageConfig.modelId);
+
+      let descIndex = 0;
+      for (const m of messages) {
+        if (Array.isArray(m.content)) {
+          const newContent: Array<{ type: 'text'; text: string }> = [];
+          for (const part of m.content) {
+            if (typeof part === 'object' && part !== null && (part as Record<string, unknown>).type === 'image_url') {
+              const desc = descriptions[descIndex] ?? 'Unable to describe';
+              newContent.push({ type: 'text', text: `[Image description: ${desc}]` });
+              this.log(`Image ${descIndex + 1}: ${desc.length > 100 ? desc.slice(0, 100) + '...' : desc}`);
+              descIndex++;
+            } else {
+              newContent.push(part as { type: 'text'; text: string });
+            }
+          }
+          m.content = newContent;
+        }
+      }
+
+      for (const m of messages) {
+        if (
+          Array.isArray(m.content) &&
+          m.content.length === 1 &&
+          (m.content[0] as Record<string, unknown>).type === 'text'
+        ) {
+          m.content = (m.content[0] as { type: 'text'; text: string }).text;
+        }
+      }
+
+      this.log(`Image understanding completed: ${imageUrls.length} image(s) described`);
+    } catch (err) {
+      this.log(`Image understanding failed: ${err}`);
+      stripImagesFromMessages(messages);
+    }
   }
 
   provideLanguageModelChatInformation(
@@ -239,11 +367,18 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       );
     }
 
+    this.log(`Chat request: model=${model.id}, baseUrl=${baseUrl}, messages=${messages.length}`);
+
     const convertedMessages = convertMessages(messages);
+
+    if (!modelConfig?.supportsVision) {
+      await this.applyImageUnderstanding(convertedMessages);
+    }
 
     const systemPrompt = resolveSystemPrompt(this.providerName, model.id);
     if (systemPrompt) {
       convertedMessages.unshift({ role: 'system', content: systemPrompt });
+      this.log(`System prompt injected (${systemPrompt.length} chars)`);
     }
 
     // Build tools array if tool calling is requested
@@ -297,14 +432,31 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         }
       } catch { /* use raw text as fallback */ }
 
+      this.log(`API error: HTTP ${response.status} — ${errorMessage}`);
       throw new Error(getFriendlyErrorMessage(response.status, displayName, errorMessage));
     }
 
     if (!response.body) {
+      this.log('API error: empty response body');
       throw new Error(`${displayName} API returned no response body`);
     }
 
     const recordedUsage = await this.streamResponse(response.body, progress, token);
+
+    const durationMs = Date.now() - startTime;
+    if (recordedUsage) {
+      this.log(
+        `Chat completed in ${durationMs}ms — ` +
+        `tokens: ${recordedUsage.prompt_tokens} in / ${recordedUsage.completion_tokens} out` +
+        (recordedUsage.reasoning_tokens ? ` / ${recordedUsage.reasoning_tokens} reasoning` : ''),
+      );
+    } else {
+      this.log(`Chat completed in ${durationMs}ms (no usage data returned)`);
+    }
+
+    if (token.isCancellationRequested) {
+      this.log('Request cancelled by user');
+    }
 
     if (recordedUsage && this.onUsageRecord) {
       this.onUsageRecord({
@@ -315,7 +467,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         outputTokens: recordedUsage.completion_tokens,
         reasoningTokens: recordedUsage.reasoning_tokens,
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - startTime,
+        durationMs,
       });
     }
   }
@@ -325,12 +477,30 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     text: string | vscode.LanguageModelChatRequestMessage,
     _token: vscode.CancellationToken
   ): Promise<number> {
-    const str = typeof text === 'string'
-      ? text
-      : text.content
-          .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
-          .join('');
-    return estimateTokenCount(str);
+    if (typeof text === 'string') {
+      return estimateTokenCount(text);
+    }
+
+    let imageCount = 0;
+    const str = text.content
+      .map((p) => {
+        if (p instanceof vscode.LanguageModelTextPart) {
+          return p.value;
+        }
+        if (
+          p &&
+          typeof p === 'object' &&
+          typeof (p as Record<string, unknown>).mimeType === 'string' &&
+          (p as Record<string, unknown>).data instanceof Uint8Array &&
+          (p as { mimeType: string }).mimeType.startsWith('image/')
+        ) {
+          imageCount++;
+        }
+        return '';
+      })
+      .join('');
+
+    return estimateTokenCount(str) + imageCount * 85;
   }
 
   private toModelInfo(m: ModelConfig): vscode.LanguageModelChatInformation {
@@ -338,6 +508,12 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       ? this.getDisplayName()
       : PROVIDER_METADATA[this.providerName].displayName;
     const modelName = m.supportsReasoning ? `${m.name} (Reasoning)` : m.name;
+
+    const imageConfig = vscode.workspace
+      .getConfiguration('openModel')
+      .get<ImageUnderstandingConfig>('imageUnderstandingModel', { provider: '', modelId: '' });
+    const hasImageFallback = !!(imageConfig.provider && imageConfig.modelId);
+
     return {
       id: m.id,
       name: modelName,
@@ -347,7 +523,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       maxOutputTokens: m.maxOutputTokens ?? 8192,
       capabilities: {
         toolCalling: true,
-        ...(m.supportsVision ? { imageInput: true } : {}),
+        imageInput: !!m.supportsVision || hasImageFallback,
       },
     };
   }
@@ -437,17 +613,16 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
                 let parsedArgs: object = {};
                 try { parsedArgs = JSON.parse(tc.args) as object; } catch {
                   const argsPreview = tc.args.length > 200 ? tc.args.slice(0, 200) + '...' : tc.args;
-                  this.output.appendLine(
-                    `[${PROVIDER_METADATA[this.providerName].displayName}] ` +
-                    `Warning: Failed to parse tool call arguments for "${tc.name}": ${argsPreview}`
+                this.log(
+                    `Warning: Failed to parse tool call arguments for "${tc.name}": ${argsPreview}`,
                   );
                 }
                 progress.report(new vscode.LanguageModelToolCallPart(tc.id, tc.name, parsedArgs));
               }
               pendingToolCalls.clear();
             }
-          } catch {
-            // Skip malformed SSE lines
+          } catch (e) {
+            this.log(`Warning: Malformed SSE line skipped: ${line.length > 100 ? line.slice(0, 100) + '...' : line}`);
           }
         }
       }

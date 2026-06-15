@@ -122,13 +122,15 @@
               "id": "kimi-k2.6",
               "name": "Kimi K2.6",
               "maxInputTokens": 262144,
-              "maxOutputTokens": 32768
+              "maxOutputTokens": 32768,
+              "supportsVision": true
             },
             {
               "id": "kimi-k2.5",
               "name": "Kimi K2.5",
               "maxInputTokens": 262144,
-              "maxOutputTokens": 32768
+              "maxOutputTokens": 32768,
+              "supportsVision": true
             },
             {
               "id": "moonshot-v1-128k",
@@ -202,13 +204,15 @@
               "id": "deepseek-v4-flash",
               "name": "DeepSeek V4 Flash",
               "maxInputTokens": 1000000,
-              "maxOutputTokens": 393216
+              "maxOutputTokens": 393216,
+              "supportsVision": true
             },
             {
               "id": "deepseek-v4-pro",
               "name": "DeepSeek V4 Pro",
               "maxInputTokens": 1000000,
-              "maxOutputTokens": 393216
+              "maxOutputTokens": 393216,
+              "supportsVision": true
             },
             {
               "id": "deepseek-chat",
@@ -277,13 +281,15 @@
               "id": "glm-5.1",
               "name": "GLM-5.1",
               "maxInputTokens": 200000,
-              "maxOutputTokens": 131072
+              "maxOutputTokens": 131072,
+              "supportsVision": true
             },
             {
               "id": "glm-5",
               "name": "GLM-5",
               "maxInputTokens": 200000,
-              "maxOutputTokens": 131072
+              "maxOutputTokens": 131072,
+              "supportsVision": true
             },
             {
               "id": "glm-5-turbo",
@@ -295,7 +301,8 @@
               "id": "glm-4.7",
               "name": "GLM-4.7",
               "maxInputTokens": 200000,
-              "maxOutputTokens": 131072
+              "maxOutputTokens": 131072,
+              "supportsVision": true
             },
             {
               "id": "glm-4.7-flash",
@@ -363,13 +370,15 @@
               "id": "qwen3.6-plus",
               "name": "Qwen3.6-Plus",
               "maxInputTokens": 1000000,
-              "maxOutputTokens": 32768
+              "maxOutputTokens": 32768,
+              "supportsVision": true
             },
             {
               "id": "qwen3.6-flash",
               "name": "Qwen3.6-Flash",
               "maxInputTokens": 1000000,
-              "maxOutputTokens": 32768
+              "maxOutputTokens": 32768,
+              "supportsVision": true
             },
             {
               "id": "qwen3.6-max-preview",
@@ -547,6 +556,27 @@
           "type": "string",
           "default": "",
           "description": "ID of the currently active system prompt template (empty = no system prompt)"
+        },
+        "openModel.imageUnderstandingModel": {
+          "type": "object",
+          "default": {
+            "provider": "",
+            "modelId": ""
+          },
+          "description": "Designated vision model for describing images when the active model does not support image input",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["kimi", "deepseek", "glm", "qwen", "custom"],
+              "default": "",
+              "description": "Provider that hosts the vision model"
+            },
+            "modelId": {
+              "type": "string",
+              "default": "",
+              "description": "Model ID of the vision model to use for image description"
+            }
+          }
         }
       }
     },
