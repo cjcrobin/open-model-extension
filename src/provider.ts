@@ -496,7 +496,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       maxOutputTokens: m.maxOutputTokens ?? 8192,
       capabilities: {
         toolCalling: true,
-        ...(m.supportsVision ? { imageInput: true } : {}),
+        imageInput: true,
       },
     };
   }
