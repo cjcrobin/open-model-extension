@@ -1,14 +1,14 @@
-# Open Model — Kimi, DeepSeek, GLM, Qwen & Doubao for Copilot Chat
+# Open Model — Kimi, DeepSeek, GLM, Qwen, Doubao & MiniMax for Copilot Chat
 
-> Use **Kimi (Moonshot AI)**, **DeepSeek V4**, **GLM-5 (Zhipu AI)**, **Qwen3 (Alibaba)**, and **Doubao (ByteDance)** models directly inside **GitHub Copilot Chat** — with streaming, reasoning tokens, and 1M context support.
+> Use **Kimi (Moonshot AI)**, **DeepSeek V4**, **GLM-5 (Zhipu AI)**, **Qwen3 (Alibaba)**, **Doubao (ByteDance)**, and **MiniMax** models directly inside **GitHub Copilot Chat** — with streaming, reasoning tokens, and 1M context support.
 
-**Keywords:** `kimi` · `moonshot` · `deepseek` · `deepseek-v4` · `deepseek-r1` · `glm` · `zhipu` · `qwen` · `qwen3` · `qwq` · `doubao` · `bytedance` · `copilot chat` · `llm` · `reasoning model` · `china ai`
+**Keywords:** `kimi` · `moonshot` · `deepseek` · `deepseek-v4` · `deepseek-r1` · `glm` · `zhipu` · `qwen` · `qwen3` · `qwq` · `doubao` · `bytedance` · `minimax` · `abab` · `copilot chat` · `llm` · `reasoning model` · `china ai`
 
-Integrate **Kimi**, **DeepSeek**, **GLM**, **Qwen**, and **Doubao** models into GitHub Copilot Chat as selectable AI models.
+Integrate **Kimi**, **DeepSeek**, **GLM**, **Qwen**, **Doubao**, and **MiniMax** models into GitHub Copilot Chat as selectable AI models.
 
 ## Features
 
-- Register models from Kimi (Moonshot AI), DeepSeek, GLM (Zhipu AI), Qwen (Alibaba Dashscope), Doubao (ByteDance), and custom OpenAI-compatible providers into the Copilot Chat model picker
+- Register models from Kimi (Moonshot AI), DeepSeek, GLM (Zhipu AI), Qwen (Alibaba Dashscope), Doubao (ByteDance), MiniMax, and custom OpenAI-compatible providers into the Copilot Chat model picker
 - Each provider can be independently enabled/disabled
 - Secure API key management via VS Code SecretStorage (OS keychain)
 - Fully customizable model lists per provider (with sensible defaults)
@@ -70,6 +70,7 @@ The key is encrypted at rest and loaded automatically when the extension starts.
 > - [GLM / Zhipu AI](https://open.bigmodel.cn/)
 > - [Qwen / Alibaba Dashscope](https://dashscope.aliyun.com/)
 > - [Doubao / ByteDance](https://console.volcengine.com/ark/)
+> - [MiniMax](https://platform.minimaxi.com/)
 
 ### Custom Model Example
 
@@ -191,6 +192,14 @@ If no image understanding model is configured and the active model doesn't suppo
 | `doubao-lite-32k` | Doubao Lite 32K | 32K | 4K | |
 | `doubao-lite-128k` | Doubao Lite 128K | 128K | 4K | |
 | `doubao-vision-pro-32k` | Doubao Vision Pro 32K | 32K | 4K | Yes |
+
+### MiniMax
+| Model ID | Name | Context | Max Output | Vision |
+|----------|------|---------|------------|--------|
+| `MiniMax-Text-01` | MiniMax Text 01 | 1M | 16K | |
+| `abab6.5s-chat` | ABAB 6.5s | 245K | 4K | |
+| `abab6.5-chat` | ABAB 6.5 | 8K | 4K | |
+| `abab5.5-chat` | ABAB 5.5 | 16K | 4K | |
 
 ## Development
 

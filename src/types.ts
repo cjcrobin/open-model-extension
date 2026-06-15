@@ -26,9 +26,9 @@ export interface RequestParams {
   extra?: Record<string, unknown>;
 }
 
-export type ProviderName = 'kimi' | 'deepseek' | 'glm' | 'qwen' | 'doubao' | 'custom';
+export type ProviderName = 'kimi' | 'deepseek' | 'glm' | 'qwen' | 'doubao' | 'minimax' | 'custom';
 
-export const PROVIDER_NAMES: readonly ProviderName[] = ['kimi', 'deepseek', 'glm', 'qwen', 'doubao', 'custom'];
+export const PROVIDER_NAMES: readonly ProviderName[] = ['kimi', 'deepseek', 'glm', 'qwen', 'doubao', 'minimax', 'custom'];
 
 export const PROVIDER_METADATA: Record<
   ProviderName,
@@ -56,6 +56,10 @@ export const PROVIDER_METADATA: Record<
   doubao: {
     displayName: 'Doubao',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+  },
+  minimax: {
+    displayName: 'MiniMax',
+    baseUrl: 'https://api.minimax.chat/v1',
   },
   custom: {
     displayName: 'Custom',

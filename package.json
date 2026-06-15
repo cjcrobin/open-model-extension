@@ -1,7 +1,7 @@
 {
   "name": "open-model",
-  "displayName": "Open Model — Kimi, DeepSeek, GLM, Qwen & Doubao for Copilot Chat",
-  "description": "Use Kimi (Moonshot AI), DeepSeek V4, GLM-5, Qwen3, and Doubao (ByteDance) models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens, vision, and 1M context windows.",
+  "displayName": "Open Model — Kimi, DeepSeek, GLM, Qwen, Doubao & MiniMax for Copilot Chat",
+  "description": "Use Kimi, DeepSeek, GLM, Qwen, Doubao, and MiniMax models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens, vision, and 1M context windows.",
   "version": "0.1.3",
   "publisher": "JingciChen",
   "license": "MIT",
@@ -30,6 +30,8 @@
     "qwq",
     "doubao",
     "bytedance",
+    "minimax",
+    "abab",
     "copilot",
     "copilot chat",
     "ai",
@@ -68,6 +70,10 @@
       {
         "vendor": "doubao",
         "displayName": "Doubao (ByteDance)"
+      },
+      {
+        "vendor": "minimax",
+        "displayName": "MiniMax"
       },
       {
         "vendor": "custom",
@@ -492,6 +498,77 @@
           ],
           "description": "List of Doubao models to register. Each model requires id and name."
         },
+        "openModel.minimax.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable MiniMax models in Copilot Chat"
+        },
+        "openModel.minimax.models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Model ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "maxInputTokens": {
+                "type": "number",
+                "description": "Max input tokens"
+              },
+              "maxOutputTokens": {
+                "type": "number",
+                "description": "Max output tokens"
+              },
+              "baseUrlOverride": {
+                "type": "string",
+                "description": "Override the default API base URL for this model (e.g. for proxy or self-hosted endpoints)"
+              },
+              "supportsVision": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model supports image/vision input"
+              },
+              "supportsReasoning": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model outputs reasoning/thinking tokens"
+              }
+            },
+            "required": ["id", "name"]
+          },
+          "default": [
+            {
+              "id": "MiniMax-Text-01",
+              "name": "MiniMax Text 01",
+              "maxInputTokens": 1000000,
+              "maxOutputTokens": 16384
+            },
+            {
+              "id": "abab6.5s-chat",
+              "name": "ABAB 6.5s",
+              "maxInputTokens": 245760,
+              "maxOutputTokens": 4096
+            },
+            {
+              "id": "abab6.5-chat",
+              "name": "ABAB 6.5",
+              "maxInputTokens": 8192,
+              "maxOutputTokens": 4096
+            },
+            {
+              "id": "abab5.5-chat",
+              "name": "ABAB 5.5",
+              "maxInputTokens": 16384,
+              "maxOutputTokens": 4096
+            }
+          ],
+          "description": "List of MiniMax models to register. Each model requires id and name."
+        },
         "openModel.custom.enabled": {
           "type": "boolean",
           "default": false,
@@ -597,6 +674,18 @@
           },
           "description": "Advanced request parameters for Doubao models"
         },
+        "openModel.minimax.requestParams": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
+            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
+            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
+            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
+            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+          },
+          "description": "Advanced request parameters for MiniMax models"
+        },
         "openModel.custom.requestParams": {
           "type": "object",
           "default": {},
@@ -663,7 +752,7 @@
           "properties": {
             "provider": {
               "type": "string",
-              "enum": ["kimi", "deepseek", "glm", "qwen", "doubao", "custom"],
+              "enum": ["kimi", "deepseek", "glm", "qwen", "doubao", "minimax", "custom"],
               "default": "",
               "description": "Provider that hosts the vision model"
             },
