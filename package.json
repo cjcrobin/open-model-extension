@@ -1,7 +1,7 @@
 {
   "name": "open-model",
-  "displayName": "Open Model — Kimi, DeepSeek, GLM & Qwen for Copilot Chat",
-  "description": "Use Kimi (Moonshot AI), DeepSeek V4, GLM-5, and Qwen3 models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens (DeepSeek R1, QwQ), and 1M context windows.",
+  "displayName": "Open Model — Kimi, DeepSeek, GLM, Qwen & Doubao for Copilot Chat",
+  "description": "Use Kimi (Moonshot AI), DeepSeek V4, GLM-5, Qwen3, and Doubao (ByteDance) models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens, vision, and 1M context windows.",
   "version": "0.1.3",
   "publisher": "JingciChen",
   "license": "MIT",
@@ -28,6 +28,8 @@
     "qwen",
     "qwen3",
     "qwq",
+    "doubao",
+    "bytedance",
     "copilot",
     "copilot chat",
     "ai",
@@ -62,6 +64,10 @@
       {
         "vendor": "qwen",
         "displayName": "Qwen (Alibaba)"
+      },
+      {
+        "vendor": "doubao",
+        "displayName": "Doubao (ByteDance)"
       },
       {
         "vendor": "custom",
@@ -408,6 +414,84 @@
           ],
           "description": "List of Qwen models to register. Each model requires id and name."
         },
+        "openModel.doubao.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Doubao (ByteDance) models in Copilot Chat"
+        },
+        "openModel.doubao.models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Model ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "maxInputTokens": {
+                "type": "number",
+                "description": "Max input tokens"
+              },
+              "maxOutputTokens": {
+                "type": "number",
+                "description": "Max output tokens"
+              },
+              "baseUrlOverride": {
+                "type": "string",
+                "description": "Override the default API base URL for this model (e.g. for proxy or self-hosted endpoints)"
+              },
+              "supportsVision": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model supports image/vision input"
+              },
+              "supportsReasoning": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this model outputs reasoning/thinking tokens"
+              }
+            },
+            "required": ["id", "name"]
+          },
+          "default": [
+            {
+              "id": "doubao-pro-32k",
+              "name": "Doubao Pro 32K",
+              "maxInputTokens": 32768,
+              "maxOutputTokens": 4096
+            },
+            {
+              "id": "doubao-pro-128k",
+              "name": "Doubao Pro 128K",
+              "maxInputTokens": 131072,
+              "maxOutputTokens": 4096
+            },
+            {
+              "id": "doubao-lite-32k",
+              "name": "Doubao Lite 32K",
+              "maxInputTokens": 32768,
+              "maxOutputTokens": 4096
+            },
+            {
+              "id": "doubao-lite-128k",
+              "name": "Doubao Lite 128K",
+              "maxInputTokens": 131072,
+              "maxOutputTokens": 4096
+            },
+            {
+              "id": "doubao-vision-pro-32k",
+              "name": "Doubao Vision Pro 32K",
+              "maxInputTokens": 32768,
+              "maxOutputTokens": 4096,
+              "supportsVision": true
+            }
+          ],
+          "description": "List of Doubao models to register. Each model requires id and name."
+        },
         "openModel.custom.enabled": {
           "type": "boolean",
           "default": false,
@@ -501,6 +585,18 @@
           },
           "description": "Advanced request parameters for Qwen models"
         },
+        "openModel.doubao.requestParams": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
+            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
+            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
+            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
+            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+          },
+          "description": "Advanced request parameters for Doubao models"
+        },
         "openModel.custom.requestParams": {
           "type": "object",
           "default": {},
@@ -567,7 +663,7 @@
           "properties": {
             "provider": {
               "type": "string",
-              "enum": ["kimi", "deepseek", "glm", "qwen", "custom"],
+              "enum": ["kimi", "deepseek", "glm", "qwen", "doubao", "custom"],
               "default": "",
               "description": "Provider that hosts the vision model"
             },
