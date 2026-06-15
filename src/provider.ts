@@ -508,6 +508,12 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       ? this.getDisplayName()
       : PROVIDER_METADATA[this.providerName].displayName;
     const modelName = m.supportsReasoning ? `${m.name} (Reasoning)` : m.name;
+
+    const imageConfig = vscode.workspace
+      .getConfiguration('openModel')
+      .get<ImageUnderstandingConfig>('imageUnderstandingModel', { provider: '', modelId: '' });
+    const hasImageFallback = !!(imageConfig.provider && imageConfig.modelId);
+
     return {
       id: m.id,
       name: modelName,
@@ -517,7 +523,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       maxOutputTokens: m.maxOutputTokens ?? 8192,
       capabilities: {
         toolCalling: true,
-        imageInput: true,
+        imageInput: !!m.supportsVision || hasImageFallback,
       },
     };
   }
