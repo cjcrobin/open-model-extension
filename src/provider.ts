@@ -84,9 +84,16 @@ export function convertMessages(
           .map((p) => (p instanceof vscode.LanguageModelTextPart ? p.value : ''))
           .join('');
         toolResults.push({ id: part.callId, content });
-      } else if (part instanceof vscode.LanguageModelDataPart && part.mimeType.startsWith('image/')) {
-        const base64 = Buffer.from(part.data).toString('base64');
-        imageParts.push({ type: 'image_url', image_url: { url: `data:${part.mimeType};base64,${base64}` } });
+      } else if (
+        part &&
+        typeof part === 'object' &&
+        typeof (part as Record<string, unknown>).mimeType === 'string' &&
+        (part as Record<string, unknown>).data instanceof Uint8Array &&
+        (part as { mimeType: string }).mimeType.startsWith('image/')
+      ) {
+        const imagePart = part as { mimeType: string; data: Uint8Array };
+        const base64 = Buffer.from(imagePart.data).toString('base64');
+        imageParts.push({ type: 'image_url', image_url: { url: `data:${imagePart.mimeType};base64,${base64}` } });
       }
     }
 
@@ -347,7 +354,13 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
         if (p instanceof vscode.LanguageModelTextPart) {
           return p.value;
         }
-        if (p instanceof vscode.LanguageModelDataPart && p.mimeType.startsWith('image/')) {
+        if (
+          p &&
+          typeof p === 'object' &&
+          typeof (p as Record<string, unknown>).mimeType === 'string' &&
+          (p as Record<string, unknown>).data instanceof Uint8Array &&
+          (p as { mimeType: string }).mimeType.startsWith('image/')
+        ) {
           imageCount++;
         }
         return '';

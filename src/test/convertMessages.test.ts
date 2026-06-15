@@ -179,4 +179,24 @@ describe('convertMessages', () => {
       { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,Ag==' } },
     ]);
   });
+
+  it('detects image parts via duck typing (plain object)', () => {
+    const imageData = new Uint8Array([0xab, 0xcd]);
+    const plainImagePart = { mimeType: 'image/png', data: imageData };
+    const messages = [
+      {
+        role: LanguageModelChatMessageRole.User,
+        content: [
+          new LanguageModelTextPart('Describe'),
+          plainImagePart,
+        ],
+        name: undefined,
+      } as unknown as LanguageModelChatRequestMessage,
+    ];
+    const result = convertMessages(messages);
+    expect(result[0].content).toEqual([
+      { type: 'text', text: 'Describe' },
+      { type: 'image_url', image_url: { url: 'data:image/png;base64,q80=' } },
+    ]);
+  });
 });
