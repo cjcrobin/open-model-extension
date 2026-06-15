@@ -80,31 +80,53 @@ Add a custom model to a provider by editing the `models` array in settings:
     "id": "deepseek-v4-flash",
     "name": "DeepSeek V4 Flash",
     "maxInputTokens": 1000000,
-    "maxOutputTokens": 393216
+    "maxOutputTokens": 393216,
+    "supportsVision": true
   },
   {
-    "id": "deepseek-v4-pro",
-    "name": "DeepSeek V4 Pro",
-    "maxInputTokens": 1000000,
-    "maxOutputTokens": 393216
+    "id": "deepseek-reasoner",
+    "name": "DeepSeek R1",
+    "maxInputTokens": 65536,
+    "maxOutputTokens": 32768,
+    "supportsReasoning": true
   }
 ]
 ```
 
-### Image Understanding for Non-Vision Models
+### Image / Vision Support
 
-If your active model doesn't support image input (vision), you can designate a vision-capable model to describe images on its behalf:
+This extension supports image input in two ways:
+
+#### Direct Vision Support
+
+Models with `supportsVision: true` in their configuration can process images directly. When you select such a model in Copilot Chat, you can paste or drag images into the chat — they are sent to the model's API as multimodal content (base64-encoded `image_url`).
+
+Several default models already have `supportsVision: true` set (marked with "Yes" in the Vision column of the [Default Models](#default-models) tables below). You can also enable vision on any model by setting `"supportsVision": true` in its config.
+
+#### Image Understanding Fallback
+
+For models that don't natively support vision, you can designate a vision-capable model to describe images on their behalf:
 
 1. Open Settings and search for `Open Model`
 2. Set `openModel.imageUnderstandingModel.provider` to a provider with vision support (e.g., `deepseek`)
 3. Set `openModel.imageUnderstandingModel.modelId` to a vision model ID (e.g., `deepseek-v4-flash`)
+4. Ensure the vision model's provider has an API key configured (via **Open Model: Set API Key**)
 
-When you send an image to a non-vision model, the extension will:
+When you send an image to a non-vision model with this fallback configured, the extension will:
 1. Send the image to the designated vision model for description
 2. Replace the image with the text description
 3. Forward the text-only conversation to your active model
 
-If no image understanding model is configured, images sent to non-vision models are silently removed.
+#### How Image Support Is Advertised
+
+| Condition | Model shows image support in picker |
+|-----------|-------------------------------------|
+| Model has `supportsVision: true` | Yes — images processed directly |
+| Model without vision + `imageUnderstandingModel` configured | Yes — images handled via fallback |
+| Model without vision + no fallback configured | No — images cannot be attached |
+| Models from other extensions | Unaffected by this extension |
+
+If no image understanding model is configured and the active model doesn't support vision, images cannot be attached in Copilot Chat (the image attachment UI will show a strikethrough).
 
 ## Commands
 
@@ -276,8 +298,8 @@ This is the primary way to test the extension end-to-end inside a real VS Code i
 | System prompt | Set `openModel.activeSystemPrompt` to a template ID → send a chat |
 | Base URL override | Set `baseUrlOverride` on a model → check requests go to custom URL |
 | Model auto-refresh | Run **Refresh Models from API** → check Output channel for fetched model count |
-| Image input | Attach an image in Copilot Chat with a vision-capable model → verify model describes the image |
-| Image understanding fallback | Send image to non-vision model with imageUnderstandingModel configured → check Output channel for fallback log |
+| Image input (vision model) | Select a model with `supportsVision: true` → attach image → verify model describes it |
+| Image input (non-vision fallback) | Configure `imageUnderstandingModel` → select non-vision model → attach image → check Output channel for fallback log |
 
 ### Package as VSIX
 
@@ -314,7 +336,7 @@ src/
   storage/              — Usage data persistence (globalState)
   types/                — Usage type definitions (TokenUsageRecord, UsageSummary)
   ui/                   — Status bar indicator
-  utils/                — System prompt, model fetching, model merging
+  utils/                — System prompt, model fetching/merging, image description
   webview/              — WebView configuration panel
   test/                 — Unit tests (vitest)
 media/                  — WebView static assets (CSS/JS)
