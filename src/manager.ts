@@ -77,7 +77,8 @@ export class ProviderManager implements vscode.Disposable {
         name === 'custom' ? () => getNestedConfig<string>('custom', 'baseUrl', '') : undefined,
         name === 'custom' ? () => getNestedConfig<string>('custom', 'vendorName', 'Custom') : undefined,
         () => getNestedConfig<Record<string, unknown>>(name, 'requestParams', {}),
-        this.usageStore ? (record: TokenUsageRecord) => { this.usageStore!.addRecord(record); } : undefined
+        this.usageStore ? (record: TokenUsageRecord) => { this.usageStore!.addRecord(record); } : undefined,
+        (provider: ProviderName) => this.getApiKey(provider)
       );
 
       const registration = vscode.lm.registerLanguageModelChatProvider(

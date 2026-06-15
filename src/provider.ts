@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { ModelConfig, PROVIDER_METADATA, ProviderName } from './types';
+import { ModelConfig, PROVIDER_METADATA, ProviderName, ImageUnderstandingConfig } from './types';
 import { getFriendlyErrorMessage } from './errors';
 import { TokenUsageRecord } from './types/usage';
 import { resolveSystemPrompt } from './utils/systemPrompt';
+import { describeImages } from './utils/describeImages';
 
 // LanguageModelThinkingPart is an internal VS Code API not yet in @types/vscode.
 // It renders a collapsible "Thinking..." block in Copilot Chat, identical to
@@ -179,6 +180,17 @@ export function convertToApiParams(params: Record<string, unknown>): Record<stri
   return result;
 }
 
+function stripImagesFromMessages(messages: ChatCompletionMessage[]): void {
+  for (const m of messages) {
+    if (Array.isArray(m.content)) {
+      const textOnly = m.content.filter(
+        (p) => typeof p === 'object' && p !== null && (p as Record<string, unknown>).type === 'text',
+      ) as Array<{ type: 'text'; text: string }>;
+      m.content = textOnly.map((p) => p.text).join('') || '';
+    }
+  }
+}
+
 /**
  * OpenAI-compatible language model provider for a single vendor.
  * Implements the VS Code LanguageModelChatProvider interface.
@@ -192,6 +204,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   private readonly getDisplayName?: () => string;
   private readonly getRequestParams?: () => Record<string, unknown>;
   private readonly onUsageRecord?: (record: TokenUsageRecord) => void;
+  private readonly getProviderApiKey?: (provider: ProviderName) => string;
 
   readonly onDidChangeLanguageModelChatInformation: vscode.Event<void>;
   private readonly _onDidChange: vscode.EventEmitter<void>;
@@ -204,7 +217,8 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     getBaseUrl?: () => string,
     getDisplayName?: () => string,
     getRequestParams?: () => Record<string, unknown>,
-    onUsageRecord?: (record: TokenUsageRecord) => void
+    onUsageRecord?: (record: TokenUsageRecord) => void,
+    getProviderApiKey?: (provider: ProviderName) => string
   ) {
     this.providerName = providerName;
     this.getApiKey = getApiKey;
@@ -214,6 +228,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     this.getDisplayName = getDisplayName;
     this.getRequestParams = getRequestParams;
     this.onUsageRecord = onUsageRecord;
+    this.getProviderApiKey = getProviderApiKey;
     this._onDidChange = new vscode.EventEmitter<void>();
     this.onDidChangeLanguageModelChatInformation = this._onDidChange.event;
   }
@@ -225,6 +240,99 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
 
   dispose(): void {
     this._onDidChange.dispose();
+  }
+
+  private async applyImageUnderstanding(
+    messages: ChatCompletionMessage[],
+    displayName: string,
+  ): Promise<void> {
+    const hasImages = messages.some(
+      (m) =>
+        Array.isArray(m.content) &&
+        m.content.some((p) => typeof p === 'object' && p !== null && (p as Record<string, unknown>).type === 'image_url'),
+    );
+
+    if (!hasImages) {
+      return;
+    }
+
+    const imageConfig = vscode.workspace
+      .getConfiguration('openModel')
+      .get<ImageUnderstandingConfig>('imageUnderstandingModel', { provider: '', modelId: '' });
+
+    if (!imageConfig.provider || !imageConfig.modelId || !this.getProviderApiKey) {
+      this.output.appendLine(
+        `[${displayName}] Non-vision model received images but no imageUnderstandingModel configured. Stripping images.`,
+      );
+      stripImagesFromMessages(messages);
+      return;
+    }
+
+    const visionProvider = imageConfig.provider as ProviderName;
+    const visionApiKey = this.getProviderApiKey(visionProvider);
+    const visionBaseUrl =
+      visionProvider === 'custom'
+        ? vscode.workspace.getConfiguration('openModel.custom').get<string>('baseUrl', '')
+        : PROVIDER_METADATA[visionProvider]?.baseUrl ?? '';
+
+    if (!visionApiKey || !visionBaseUrl) {
+      this.output.appendLine(
+        `[${displayName}] Image understanding configured but ${imageConfig.provider} API key or base URL not set. Stripping images.`,
+      );
+      stripImagesFromMessages(messages);
+      return;
+    }
+
+    const imageUrls: string[] = [];
+    for (const m of messages) {
+      if (Array.isArray(m.content)) {
+        for (const part of m.content) {
+          if (typeof part === 'object' && part !== null && (part as Record<string, unknown>).type === 'image_url') {
+            imageUrls.push((part as { image_url: { url: string } }).image_url.url);
+          }
+        }
+      }
+    }
+
+    try {
+      const descriptions = await describeImages(imageUrls, visionBaseUrl, visionApiKey, imageConfig.modelId);
+
+      let descIndex = 0;
+      for (const m of messages) {
+        if (Array.isArray(m.content)) {
+          const newContent: Array<{ type: 'text'; text: string }> = [];
+          for (const part of m.content) {
+            if (typeof part === 'object' && part !== null && (part as Record<string, unknown>).type === 'image_url') {
+              newContent.push({
+                type: 'text',
+                text: `[Image description: ${descriptions[descIndex] ?? 'Unable to describe'}]`,
+              });
+              descIndex++;
+            } else {
+              newContent.push(part as { type: 'text'; text: string });
+            }
+          }
+          m.content = newContent;
+        }
+      }
+
+      for (const m of messages) {
+        if (
+          Array.isArray(m.content) &&
+          m.content.length === 1 &&
+          (m.content[0] as Record<string, unknown>).type === 'text'
+        ) {
+          m.content = (m.content[0] as { type: 'text'; text: string }).text;
+        }
+      }
+
+      this.output.appendLine(
+        `[${displayName}] Used ${imageConfig.provider}/${imageConfig.modelId} to describe ${imageUrls.length} image(s)`,
+      );
+    } catch (err) {
+      this.output.appendLine(`[${displayName}] Image understanding failed: ${err}`);
+      stripImagesFromMessages(messages);
+    }
   }
 
   provideLanguageModelChatInformation(
@@ -259,6 +367,10 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     }
 
     const convertedMessages = convertMessages(messages);
+
+    if (!modelConfig?.supportsVision) {
+      await this.applyImageUnderstanding(convertedMessages, displayName);
+    }
 
     const systemPrompt = resolveSystemPrompt(this.providerName, model.id);
     if (systemPrompt) {

@@ -556,6 +556,27 @@
           "type": "string",
           "default": "",
           "description": "ID of the currently active system prompt template (empty = no system prompt)"
+        },
+        "openModel.imageUnderstandingModel": {
+          "type": "object",
+          "default": {
+            "provider": "",
+            "modelId": ""
+          },
+          "description": "Designated vision model for describing images when the active model does not support image input",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["kimi", "deepseek", "glm", "qwen", "custom"],
+              "default": "",
+              "description": "Provider that hosts the vision model"
+            },
+            "modelId": {
+              "type": "string",
+              "default": "",
+              "description": "Model ID of the vision model to use for image description"
+            }
+          }
         }
       }
     },

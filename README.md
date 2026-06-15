@@ -49,6 +49,7 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, and **Qwen** models into GitHub Copil
 | `openModel.custom.vendorName` | Display name for custom provider |
 | `openModel.systemPrompts` | System prompt templates |
 | `openModel.activeSystemPrompt` | ID of the active system prompt template |
+| `openModel.imageUnderstandingModel` | Designated vision model for image description fallback |
 
 ### API Key Management
 
@@ -89,6 +90,21 @@ Add a custom model to a provider by editing the `models` array in settings:
   }
 ]
 ```
+
+### Image Understanding for Non-Vision Models
+
+If your active model doesn't support image input (vision), you can designate a vision-capable model to describe images on its behalf:
+
+1. Open Settings and search for `Open Model`
+2. Set `openModel.imageUnderstandingModel.provider` to a provider with vision support (e.g., `deepseek`)
+3. Set `openModel.imageUnderstandingModel.modelId` to a vision model ID (e.g., `deepseek-v4-flash`)
+
+When you send an image to a non-vision model, the extension will:
+1. Send the image to the designated vision model for description
+2. Replace the image with the text description
+3. Forward the text-only conversation to your active model
+
+If no image understanding model is configured, images sent to non-vision models are silently removed.
 
 ## Commands
 
@@ -208,6 +224,8 @@ Test files are in `src/test/`:
 - `mergeModels.test.ts` — fetched/existing model merging logic
 - `refreshProviderModels.test.ts` — provider refresh flow (fetch, merge, persist)
 - `extensionRefresh.test.ts` — startup auto-refresh and manual refresh command
+- `describeImages.test.ts` — vision model image description utility
+- `imageUnderstanding.test.ts` — image understanding fallback integration
 
 ### Local Integration Testing (Extension Host)
 
@@ -259,6 +277,7 @@ This is the primary way to test the extension end-to-end inside a real VS Code i
 | Base URL override | Set `baseUrlOverride` on a model → check requests go to custom URL |
 | Model auto-refresh | Run **Refresh Models from API** → check Output channel for fetched model count |
 | Image input | Attach an image in Copilot Chat with a vision-capable model → verify model describes the image |
+| Image understanding fallback | Send image to non-vision model with imageUnderstandingModel configured → check Output channel for fallback log |
 
 ### Package as VSIX
 
