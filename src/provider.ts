@@ -360,7 +360,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
       ? this.getDisplayName()
       : PROVIDER_METADATA[this.providerName].displayName;
 
-    if (!apiKey) {
+    if (!apiKey && this.providerName !== 'custom') {
       throw new Error(
         `${displayName} API key is not configured. ` +
           `Use the "Open Model: Set API Key" command to set it.`

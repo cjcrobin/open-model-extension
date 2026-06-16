@@ -51,13 +51,17 @@ export class ProviderManager implements vscode.Disposable {
 
   /**
    * Get a provider's API key from the in-memory cache.
+   * For the "custom" provider, returns a placeholder when no key is stored
+   * so that local/keyless endpoints (vLLM, llama.cpp, Ollama, etc.) work
+   * without requiring the user to set a dummy API key.
    */
   getApiKey(name: ProviderName): string {
-    return this.apiKeys.get(name) ?? '';
+    return this.apiKeys.get(name)
+      ?? (name === 'custom' ? 'noop' : '');
   }
 
   hasApiKey(name: ProviderName): boolean {
-    return !!this.apiKeys.get(name);
+    return !!this.apiKeys.get(name) || name === 'custom';
   }
 
   /**
