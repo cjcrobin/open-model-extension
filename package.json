@@ -2,7 +2,7 @@
   "name": "open-model",
   "displayName": "Open Model — Kimi, DeepSeek, GLM, Qwen, Doubao & MiniMax for Copilot Chat",
   "description": "Use Kimi, DeepSeek, GLM, Qwen, Doubao, and MiniMax models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens, vision, and 1M context windows.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "JingciChen",
   "license": "MIT",
   "repository": {
@@ -122,6 +122,14 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              },
+              "apiStyle": {
+                "type": "string",
+                "enum": [
+                  "openai",
+                  "anthropic"
+                ],
+                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -204,6 +212,14 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              },
+              "apiStyle": {
+                "type": "string",
+                "enum": [
+                  "openai",
+                  "anthropic"
+                ],
+                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -281,6 +297,14 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              },
+              "apiStyle": {
+                "type": "string",
+                "enum": [
+                  "openai",
+                  "anthropic"
+                ],
+                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -370,6 +394,14 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
+              },
+              "apiStyle": {
+                "type": "string",
+                "enum": [
+                  "openai",
+                  "anthropic"
+                ],
+                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -459,9 +491,20 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens"
+              },
+              "apiStyle": {
+                "type": "string",
+                "enum": [
+                  "openai",
+                  "anthropic"
+                ],
+                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
-            "required": ["id", "name"]
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "default": [
             {
@@ -537,9 +580,20 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens"
+              },
+              "apiStyle": {
+                "type": "string",
+                "enum": [
+                  "openai",
+                  "anthropic"
+                ],
+                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
-            "required": ["id", "name"]
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "default": [
             {
@@ -604,6 +658,14 @@
               "maxOutputTokens": {
                 "type": "number",
                 "description": "Max output tokens"
+              },
+              "apiStyle": {
+                "type": "string",
+                "enum": [
+                  "openai",
+                  "anthropic"
+                ],
+                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -618,11 +680,34 @@
           "type": "object",
           "default": {},
           "properties": {
-            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
-            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
-            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
-            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
-            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Sampling temperature"
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Nucleus sampling parameter"
+            },
+            "frequencyPenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Frequency penalty"
+            },
+            "presencePenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Presence penalty"
+            },
+            "extra": {
+              "type": "object",
+              "description": "Additional provider-specific parameters"
+            }
           },
           "description": "Advanced request parameters for Kimi models"
         },
@@ -630,11 +715,34 @@
           "type": "object",
           "default": {},
           "properties": {
-            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
-            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
-            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
-            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
-            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Sampling temperature"
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Nucleus sampling parameter"
+            },
+            "frequencyPenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Frequency penalty"
+            },
+            "presencePenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Presence penalty"
+            },
+            "extra": {
+              "type": "object",
+              "description": "Additional provider-specific parameters"
+            }
           },
           "description": "Advanced request parameters for DeepSeek models"
         },
@@ -642,11 +750,34 @@
           "type": "object",
           "default": {},
           "properties": {
-            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
-            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
-            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
-            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
-            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Sampling temperature"
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Nucleus sampling parameter"
+            },
+            "frequencyPenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Frequency penalty"
+            },
+            "presencePenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Presence penalty"
+            },
+            "extra": {
+              "type": "object",
+              "description": "Additional provider-specific parameters"
+            }
           },
           "description": "Advanced request parameters for GLM models"
         },
@@ -654,11 +785,34 @@
           "type": "object",
           "default": {},
           "properties": {
-            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
-            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
-            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
-            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
-            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Sampling temperature"
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Nucleus sampling parameter"
+            },
+            "frequencyPenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Frequency penalty"
+            },
+            "presencePenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Presence penalty"
+            },
+            "extra": {
+              "type": "object",
+              "description": "Additional provider-specific parameters"
+            }
           },
           "description": "Advanced request parameters for Qwen models"
         },
@@ -666,11 +820,34 @@
           "type": "object",
           "default": {},
           "properties": {
-            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
-            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
-            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
-            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
-            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Sampling temperature"
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Nucleus sampling parameter"
+            },
+            "frequencyPenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Frequency penalty"
+            },
+            "presencePenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Presence penalty"
+            },
+            "extra": {
+              "type": "object",
+              "description": "Additional provider-specific parameters"
+            }
           },
           "description": "Advanced request parameters for Doubao models"
         },
@@ -678,11 +855,34 @@
           "type": "object",
           "default": {},
           "properties": {
-            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
-            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
-            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
-            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
-            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Sampling temperature"
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Nucleus sampling parameter"
+            },
+            "frequencyPenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Frequency penalty"
+            },
+            "presencePenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Presence penalty"
+            },
+            "extra": {
+              "type": "object",
+              "description": "Additional provider-specific parameters"
+            }
           },
           "description": "Advanced request parameters for MiniMax models"
         },
@@ -690,11 +890,34 @@
           "type": "object",
           "default": {},
           "properties": {
-            "temperature": { "type": "number", "minimum": 0, "maximum": 2, "description": "Sampling temperature" },
-            "topP": { "type": "number", "minimum": 0, "maximum": 1, "description": "Nucleus sampling parameter" },
-            "frequencyPenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Frequency penalty" },
-            "presencePenalty": { "type": "number", "minimum": -2, "maximum": 2, "description": "Presence penalty" },
-            "extra": { "type": "object", "description": "Additional provider-specific parameters" }
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Sampling temperature"
+            },
+            "topP": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Nucleus sampling parameter"
+            },
+            "frequencyPenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Frequency penalty"
+            },
+            "presencePenalty": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 2,
+              "description": "Presence penalty"
+            },
+            "extra": {
+              "type": "object",
+              "description": "Additional provider-specific parameters"
+            }
           },
           "description": "Advanced request parameters for custom provider models"
         },
@@ -703,21 +926,38 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "description": "Unique identifier for this prompt template" },
-              "name": { "type": "string", "description": "Display name for the template" },
-              "content": { "type": "string", "description": "The system prompt text" },
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for this prompt template"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name for the template"
+              },
+              "content": {
+                "type": "string",
+                "description": "The system prompt text"
+              },
               "providers": {
                 "type": "array",
-                "items": { "type": "string" },
+                "items": {
+                  "type": "string"
+                },
                 "description": "Provider names this template applies to (empty = all providers)"
               },
               "modelIds": {
                 "type": "array",
-                "items": { "type": "string" },
+                "items": {
+                  "type": "string"
+                },
                 "description": "Model IDs this template applies to (empty = all models)"
               }
             },
-            "required": ["id", "name", "content"]
+            "required": [
+              "id",
+              "name",
+              "content"
+            ]
           },
           "default": [
             {
@@ -731,8 +971,14 @@
               "id": "reasoning",
               "name": "Reasoning Mode",
               "content": "Think step by step before providing your answer. Show your reasoning process clearly.",
-              "providers": ["deepseek", "qwen"],
-              "modelIds": ["deepseek-reasoner", "qwq-32b"]
+              "providers": [
+                "deepseek",
+                "qwen"
+              ],
+              "modelIds": [
+                "deepseek-reasoner",
+                "qwq-32b"
+              ]
             }
           ],
           "description": "Custom system prompt templates that are prepended to conversations"
@@ -752,7 +998,15 @@
           "properties": {
             "provider": {
               "type": "string",
-              "enum": ["kimi", "deepseek", "glm", "qwen", "doubao", "minimax", "custom"],
+              "enum": [
+                "kimi",
+                "deepseek",
+                "glm",
+                "qwen",
+                "doubao",
+                "minimax",
+                "custom"
+              ],
               "default": "",
               "description": "Provider that hosts the vision model"
             },
@@ -762,6 +1016,15 @@
               "description": "Model ID of the vision model to use for image description"
             }
           }
+        },
+        "openModel.custom.apiStyle": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "anthropic"
+          ],
+          "default": "openai",
+          "description": "API protocol used by the custom provider endpoint. Anthropic-style uses /messages + x-api-key; OpenAI-style uses /chat/completions + Bearer auth."
         }
       }
     },
