@@ -55,7 +55,7 @@ describe('extension.ts auto-refresh and refresh command', () => {
   });
 
   describe('startup auto-refresh', () => {
-    it('triggers refresh for enabled provider with API key', async () => {
+    it('does NOT auto-refresh on startup even when provider is enabled with API key', async () => {
       setMockConfig('openModel.deepseek', 'enabled', true);
       vi.mocked(context.secrets.get).mockImplementation(async (key: string) => {
         if (key === 'openModel.deepseek.apiKey') {
@@ -67,11 +67,7 @@ describe('extension.ts auto-refresh and refresh command', () => {
       await activate(context);
       await new Promise((r) => setTimeout(r, 10));
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.deepseek.com/v1',
-        'test-key',
-        expect.any(AbortSignal),
-      );
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('does not refresh when no providers are enabled', async () => {
@@ -92,8 +88,9 @@ describe('extension.ts auto-refresh and refresh command', () => {
   });
 
   describe('manual refresh command', () => {
-    it('triggers refresh for qualifying providers and shows notification', async () => {
+    it('shows quickpick of qualifying providers and refreshes the selected one', async () => {
       setMockConfig('openModel.deepseek', 'enabled', true);
+      setMockConfig('openModel.deepseek', 'models', [{ id: 'm1', name: 'M1' }]);
       vi.mocked(context.secrets.get).mockImplementation(async (key: string) => {
         if (key === 'openModel.deepseek.apiKey') {
           return 'test-key';
@@ -104,6 +101,11 @@ describe('extension.ts auto-refresh and refresh command', () => {
       await activate(context);
 
       mockFetch.mockClear();
+      vi.mocked(vscode.window.showQuickPick).mockResolvedValueOnce([{
+        label: 'DeepSeek',
+        description: 'deepseek',
+        detail: '1 model(s) configured',
+      }] as never);
 
       const handler = getRegisteredCommand('openModel.refreshModels');
       expect(handler).toBeDefined();
@@ -111,10 +113,61 @@ describe('extension.ts auto-refresh and refresh command', () => {
       await handler!();
       await new Promise((r) => setTimeout(r, 10));
 
-      expect(mockFetch).toHaveBeenCalled();
+      expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ description: 'deepseek' })]),
+        expect.objectContaining({
+          title: 'Open Model: Refresh Models',
+          canPickMany: true,
+        }),
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.deepseek.com/v1',
+        'test-key',
+        expect.any(AbortSignal),
+      );
       expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
         expect.stringContaining('DeepSeek'),
       );
+    });
+
+    it('does nothing when the user cancels the quickpick', async () => {
+      setMockConfig('openModel.deepseek', 'enabled', true);
+      vi.mocked(context.secrets.get).mockImplementation(async (key: string) => {
+        if (key === 'openModel.deepseek.apiKey') {
+          return 'test-key';
+        }
+        return undefined;
+      });
+
+      await activate(context);
+      mockFetch.mockClear();
+      vi.mocked(vscode.window.showQuickPick).mockResolvedValueOnce(undefined as never);
+
+      const handler = getRegisteredCommand('openModel.refreshModels');
+      await handler!();
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when the user confirms an empty selection', async () => {
+      setMockConfig('openModel.deepseek', 'enabled', true);
+      vi.mocked(context.secrets.get).mockImplementation(async (key: string) => {
+        if (key === 'openModel.deepseek.apiKey') {
+          return 'test-key';
+        }
+        return undefined;
+      });
+
+      await activate(context);
+      mockFetch.mockClear();
+      vi.mocked(vscode.window.showQuickPick).mockResolvedValueOnce([] as never);
+
+      const handler = getRegisteredCommand('openModel.refreshModels');
+      await handler!();
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('shows "no enabled providers" when none qualify', async () => {
@@ -125,8 +178,51 @@ describe('extension.ts auto-refresh and refresh command', () => {
 
       await handler!();
 
+      expect(vscode.window.showQuickPick).not.toHaveBeenCalled();
       expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
         expect.stringContaining('No enabled providers'),
+      );
+    });
+
+    it('refreshes every picked provider and skips unpicked ones', async () => {
+      setMockConfig('openModel.deepseek', 'enabled', true);
+      setMockConfig('openModel.minimax', 'enabled', true);
+      setMockConfig('openModel.kimi', 'enabled', true);
+      vi.mocked(context.secrets.get).mockImplementation(async (key: string) => {
+        if (key === 'openModel.deepseek.apiKey') return 'ds-key';
+        if (key === 'openModel.minimax.apiKey') return 'mm-key';
+        if (key === 'openModel.kimi.apiKey') return 'km-key';
+        return undefined;
+      });
+
+      await activate(context);
+      mockFetch.mockClear();
+      vi.mocked(vscode.window.showQuickPick).mockResolvedValueOnce([
+        { label: 'MiniMax', description: 'minimax', detail: '' },
+        { label: 'Kimi', description: 'kimi', detail: '' },
+      ] as never);
+
+      const handler = getRegisteredCommand('openModel.refreshModels');
+      await handler!();
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.minimax.chat/v1',
+        'mm-key',
+        expect.any(AbortSignal),
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.moonshot.cn/v1',
+        'km-key',
+        expect.any(AbortSignal),
+      );
+      expect(mockFetch).not.toHaveBeenCalledWith(
+        'https://api.deepseek.com/v1',
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining('MiniMax'),
       );
     });
   });

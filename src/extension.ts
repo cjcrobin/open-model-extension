@@ -47,16 +47,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   manager.registerAll();
   manager.logStatus();
 
-  for (const name of PROVIDER_NAMES) {
-    const enabled = vscode.workspace.getConfiguration(`openModel.${name}`).get<boolean>('enabled', false);
-    if (enabled && manager.getApiKey(name)) {
-      log(output, `[${PROVIDER_METADATA[name].displayName}] Starting auto-refresh models...`);
-      manager.refreshProviderModels(name).catch((err) => {
-        log(output, `[${PROVIDER_METADATA[name].displayName}] Auto-refresh failed: ${err}`);
-      });
-    }
-  }
-
   const statusBarItem = createStatusBarItem();
   context.subscriptions.push(statusBarItem);
 
@@ -265,26 +255,60 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.refreshModels', async () => {
-      const refreshing: string[] = [];
+      const candidates: { name: ProviderName; detail: string }[] = [];
       for (const name of PROVIDER_NAMES) {
         const enabled = vscode.workspace.getConfiguration(`openModel.${name}`).get<boolean>('enabled', false);
-        if (enabled && manager!.getApiKey(name)) {
-          refreshing.push(PROVIDER_METADATA[name].displayName);
-          log(output, `[${PROVIDER_METADATA[name].displayName}] Refreshing models from API...`);
-          manager!.refreshProviderModels(name).catch((err) => {
-            log(output, `[${PROVIDER_METADATA[name].displayName}] Refresh command failed: ${err}`);
-          });
+        if (!enabled) {
+          continue;
         }
+        const apiKey = manager!.getApiKey(name);
+        const baseUrl = name === 'custom'
+          ? vscode.workspace.getConfiguration(`openModel.${name}`).get<string>('baseUrl', '')
+          : PROVIDER_METADATA[name].baseUrl;
+        if (!apiKey || !baseUrl) {
+          continue;
+        }
+        const models = vscode.workspace.getConfiguration(`openModel.${name}`).get<unknown[]>('models', []);
+        candidates.push({
+          name,
+          detail: `${models.length} model(s) configured`,
+        });
       }
-      if (refreshing.length > 0) {
-        vscode.window.showInformationMessage(
-          `Open Model: Refreshing models for ${refreshing.join(', ')}...`,
-        );
-      } else {
-        log(output, 'Refresh command: no enabled providers with API keys');
+
+      if (candidates.length === 0) {
+        log(output, 'Refresh command: no enabled providers with API keys and base URLs');
         vscode.window.showInformationMessage(
           'Open Model: No enabled providers with API keys to refresh.',
         );
+        return;
+      }
+
+      const picks = await vscode.window.showQuickPick(
+        candidates.map((c) => ({
+          label: PROVIDER_METADATA[c.name].displayName,
+          description: c.name,
+          detail: c.detail,
+        })),
+        {
+          placeHolder: 'Select one or more providers to refresh their model lists from vendor APIs',
+          title: 'Open Model: Refresh Models',
+          canPickMany: true,
+        },
+      );
+      if (!picks || picks.length === 0) {
+        return;
+      }
+
+      const selected = picks.map((p) => p.description as ProviderName);
+      log(output, `Refreshing models for ${selected.join(', ')}...`);
+      vscode.window.showInformationMessage(
+        `Open Model: Refreshing models for ${selected.map((n) => PROVIDER_METADATA[n].displayName).join(', ')}...`,
+      );
+      for (const providerName of selected) {
+        const { displayName } = PROVIDER_METADATA[providerName];
+        manager!.refreshProviderModels(providerName).catch((err) => {
+          log(output, `[${displayName}] Refresh command failed: ${err}`);
+        });
       }
     })
   );
