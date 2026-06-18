@@ -122,14 +122,6 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
-              },
-              "apiStyle": {
-                "type": "string",
-                "enum": [
-                  "openai",
-                  "anthropic"
-                ],
-                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -212,14 +204,6 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
-              },
-              "apiStyle": {
-                "type": "string",
-                "enum": [
-                  "openai",
-                  "anthropic"
-                ],
-                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -297,14 +281,6 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
-              },
-              "apiStyle": {
-                "type": "string",
-                "enum": [
-                  "openai",
-                  "anthropic"
-                ],
-                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -394,14 +370,6 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens (e.g. DeepSeek R1, QwQ)"
-              },
-              "apiStyle": {
-                "type": "string",
-                "enum": [
-                  "openai",
-                  "anthropic"
-                ],
-                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -491,14 +459,6 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens"
-              },
-              "apiStyle": {
-                "type": "string",
-                "enum": [
-                  "openai",
-                  "anthropic"
-                ],
-                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -580,14 +540,6 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Whether this model outputs reasoning/thinking tokens"
-              },
-              "apiStyle": {
-                "type": "string",
-                "enum": [
-                  "openai",
-                  "anthropic"
-                ],
-                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -658,14 +610,6 @@
               "maxOutputTokens": {
                 "type": "number",
                 "description": "Max output tokens"
-              },
-              "apiStyle": {
-                "type": "string",
-                "enum": [
-                  "openai",
-                  "anthropic"
-                ],
-                "description": "Override the API protocol for this model. Leave unset to inherit the provider default."
               }
             },
             "required": [
@@ -1016,15 +960,6 @@
               "description": "Model ID of the vision model to use for image description"
             }
           }
-        },
-        "openModel.custom.apiStyle": {
-          "type": "string",
-          "enum": [
-            "openai",
-            "anthropic"
-          ],
-          "default": "openai",
-          "description": "API protocol used by the custom provider endpoint. Anthropic-style uses /messages + x-api-key; OpenAI-style uses /chat/completions + Bearer auth."
         },
         "openModel.kimi.baseUrl": {
           "type": "string",

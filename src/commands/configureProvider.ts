@@ -77,7 +77,7 @@ async function configureBuiltin(name: ProviderName): Promise<ConfigureResult | u
 // T074 — Custom: URL + optional key
 async function configureCustom(): Promise<ConfigureResult | undefined> {
   const baseUrl = await vscode.window.showInputBox({
-    prompt: 'Enter the base URL of your OpenAI- or Anthropic-compatible endpoint',
+    prompt: 'Enter the base URL of your OpenAI-compatible endpoint',
     placeHolder: 'http://localhost:11434/v1',
     ignoreFocusOut: true,
     title: 'Open Model: Configure Custom (2/3)',
