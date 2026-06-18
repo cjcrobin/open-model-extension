@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as vscode from 'vscode';
+import { resetMockConfig, setMockConfig } from './__mocks__/vscode';
 import { OpenAICompatProvider } from '../provider';
 
 function createOutput(): vscode.OutputChannel {
@@ -36,6 +37,7 @@ function makeToken(): vscode.CancellationToken {
 
 describe('OpenAICompatProvider — vendor extraHeaders', () => {
   beforeEach(() => {
+    resetMockConfig();
     vi.stubGlobal('fetch', vi.fn());
   });
 
@@ -116,6 +118,98 @@ describe('OpenAICompatProvider — vendor extraHeaders', () => {
       name: 'DeepSeek Chat',
       family: 'DeepSeek',
       version: 'deepseek-chat',
+      maxInputTokens: 8192,
+      maxOutputTokens: 4096,
+      capabilities: { toolCalling: false, imageInput: false },
+    } as unknown as vscode.LanguageModelChatInformation;
+
+    await provider.provideLanguageModelChatResponse(
+      modelInfo,
+      [userMessage('hi')],
+      {} as vscode.ProvideLanguageModelChatResponseOptions,
+      makeProgress(),
+      makeToken(),
+    );
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    const headers = init?.headers as Record<string, string>;
+    expect(headers['User-Agent']).toBeUndefined();
+    expect(headers['X-Client-Name']).toBeUndefined();
+  });
+
+  it('injects KimiCLI User-Agent when Kimi is configured for the Coding gateway', async () => {
+    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding');
+    const kimiModel = { id: 'kimi-for-coding', name: 'Kimi for Coding' };
+    const provider = new OpenAICompatProvider(
+      'kimi',
+      () => 'km-test-key',
+      () => [kimiModel],
+      createOutput(),
+    );
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      }),
+    } as Response);
+
+    const modelInfo = {
+      id: 'kimi-for-coding',
+      name: 'Kimi for Coding',
+      family: 'Kimi',
+      version: 'kimi-for-coding',
+      maxInputTokens: 8192,
+      maxOutputTokens: 4096,
+      capabilities: { toolCalling: false, imageInput: false },
+    } as unknown as vscode.LanguageModelChatInformation;
+
+    await provider.provideLanguageModelChatResponse(
+      modelInfo,
+      [userMessage('hi')],
+      {} as vscode.ProvideLanguageModelChatResponseOptions,
+      makeProgress(),
+      makeToken(),
+    );
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    const headers = init?.headers as Record<string, string>;
+    expect(headers).toMatchObject({
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer km-test-key',
+      'User-Agent': 'KimiCLI/1.5',
+      'X-Client-Name': 'KimiCLI',
+    });
+  });
+
+  it('does NOT inject KimiCLI User-Agent when Kimi baseUrl points to an unknown proxy', async () => {
+    setMockConfig('openModel.kimi', 'baseUrl', 'https://proxy.example.com/v1');
+    const kimiModel = { id: 'kimi-k2.6', name: 'Kimi K2.6' };
+    const provider = new OpenAICompatProvider(
+      'kimi',
+      () => 'km-test-key',
+      () => [kimiModel],
+      createOutput(),
+    );
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      }),
+    } as Response);
+
+    const modelInfo = {
+      id: 'kimi-k2.6',
+      name: 'Kimi K2.6',
+      family: 'Kimi',
+      version: 'kimi-k2.6',
       maxInputTokens: 8192,
       maxOutputTokens: 4096,
       capabilities: { toolCalling: false, imageInput: false },

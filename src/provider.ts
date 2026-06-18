@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { ModelConfig, PROVIDER_METADATA, ProviderName, ImageUnderstandingConfig } from './types';
+import { KIMI_VARIANT_METADATA, ModelConfig, PROVIDER_METADATA, ProviderName, ImageUnderstandingConfig } from './types';
 import { getFriendlyErrorMessage } from './errors';
 import { TokenUsageRecord } from './types/usage';
 import { resolveSystemPrompt } from './utils/systemPrompt';
 import { describeImages } from './utils/describeImages';
+import { resolveKimiVariant } from './utils/kimiVariant';
 
 // LanguageModelThinkingPart is an internal VS Code API not yet in @types/vscode.
 // It renders a collapsible "Thinking..." block in Copilot Chat, identical to
@@ -243,6 +244,34 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     this.output.appendLine(`[${ts}] [${this.providerName}] ${message}`);
   }
 
+  /**
+   * Build the outgoing request headers.
+   *
+   * - Always includes Content-Type + Bearer auth.
+   * - For Kimi, consults the active KimiVariant (inferred from
+   *   `openModel.kimi.baseUrl`) and merges the variant's extraHeaders. This
+   *   is what injects the whitelisted `User-Agent: KimiCLI/1.5` when the
+   *   user is on the Coding gateway.
+   * - For other providers, merges any static `extraHeaders` declared in
+   *   PROVIDER_METADATA (currently unused, kept as an extension point).
+   */
+  private buildRequestHeaders(apiKey: string): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    if (this.providerName === 'kimi') {
+      const extras = KIMI_VARIANT_METADATA[resolveKimiVariant()].extraHeaders;
+      if (extras) Object.assign(headers, extras);
+    } else {
+      const extras = PROVIDER_METADATA[this.providerName].extraHeaders;
+      if (extras) Object.assign(headers, extras);
+    }
+
+    return headers;
+  }
+
   dispose(): void {
     this._onDidChange.dispose();
   }
@@ -414,10 +443,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: this.buildRequestHeaders(apiKey),
       body: JSON.stringify(requestBody),
       signal: abortController.signal,
     });
