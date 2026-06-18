@@ -1025,6 +1025,92 @@
           ],
           "default": "openai",
           "description": "API protocol used by the custom provider endpoint. Anthropic-style uses /messages + x-api-key; OpenAI-style uses /chat/completions + Bearer auth."
+        },
+        "openModel.kimi.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Override the default base URL for kimi. Leave empty to use the built-in default."
+        },
+        "openModel.kimi.extraHeaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Extra HTTP headers merged into every request for kimi (e.g. User-Agent overrides)."
+        },
+        "openModel.deepseek.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Override the default base URL for deepseek. Leave empty to use the built-in default."
+        },
+        "openModel.deepseek.extraHeaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Extra HTTP headers merged into every request for deepseek (e.g. User-Agent overrides)."
+        },
+        "openModel.glm.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Override the default base URL for glm. Leave empty to use the built-in default."
+        },
+        "openModel.glm.extraHeaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Extra HTTP headers merged into every request for glm (e.g. User-Agent overrides)."
+        },
+        "openModel.qwen.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Override the default base URL for qwen. Leave empty to use the built-in default."
+        },
+        "openModel.qwen.extraHeaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Extra HTTP headers merged into every request for qwen (e.g. User-Agent overrides)."
+        },
+        "openModel.doubao.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Override the default base URL for doubao. Leave empty to use the built-in default."
+        },
+        "openModel.doubao.extraHeaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Extra HTTP headers merged into every request for doubao (e.g. User-Agent overrides)."
+        },
+        "openModel.minimax.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Override the default base URL for minimax. Leave empty to use the built-in default."
+        },
+        "openModel.minimax.extraHeaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Extra HTTP headers merged into every request for minimax (e.g. User-Agent overrides)."
+        },
+        "openModel.custom.extraHeaders": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Extra HTTP headers merged into every request for custom (e.g. User-Agent overrides)."
         }
       }
     },
