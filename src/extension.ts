@@ -6,6 +6,7 @@ import { UsageStore } from './storage/usageStore';
 import { exportConfigCommand } from './commands/exportConfig';
 import { importConfigCommand } from './commands/importConfig';
 import { showUsageCommand } from './commands/showUsage';
+import { toggleProviderCommand } from './commands/toggleProvider';
 import { createStatusBarItem, updateStatusBar } from './ui/statusBar';
 import { ConfigPanel } from './webview/configPanel';
 
@@ -311,6 +312,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         });
       }
     })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.toggleProvider', toggleProviderCommand),
   );
 
   log(output, 'Open Model extension activated.');
