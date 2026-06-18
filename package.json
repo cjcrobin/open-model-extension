@@ -1078,6 +1078,16 @@
         "command": "openModel.refreshModels",
         "title": "Open Model: Refresh Models from API",
         "category": "Open Model"
+      },
+      {
+        "command": "openModel.configureProvider",
+        "title": "Open Model: Configure Provider",
+        "category": "Open Model"
+      },
+      {
+        "command": "openModel.toggleProvider",
+        "title": "Open Model: Toggle Provider",
+        "category": "Open Model"
       }
     ]
   },
