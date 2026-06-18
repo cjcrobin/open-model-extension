@@ -129,7 +129,7 @@ headers. The extension infers which one you're on from
 
 | Variant | Base URL | Default models | Required headers |
 |---------|----------|----------------|------------------|
-| **Kimi Code** (Coding Plan gateway) | `https://api.kimi.com/coding` | `kimi-for-coding` | `User-Agent: KimiCLI/1.5`, `X-Client-Name: KimiCLI` |
+| **Kimi Code** (Coding Plan gateway) | `https://api.kimi.com/coding/v1` | `kimi-for-coding` | `User-Agent: KimiCLI/1.5`, `X-Client-Name: KimiCLI` |
 | **Kimi AI Platform** (Moonshot open API) | `https://api.moonshot.cn/v1` | `kimi-k2.6`, `kimi-k2.5` | — |
 
 **Picking a variant interactively.** Run **Open Model: Configure
@@ -143,7 +143,7 @@ required:
 
 ```jsonc
 // Kimi Code
-"openModel.kimi.baseUrl": "https://api.kimi.com/coding",
+"openModel.kimi.baseUrl": "https://api.kimi.com/coding/v1",
 "openModel.kimi.extraHeaders": {
   "User-Agent": "KimiCLI/1.5",
   "X-Client-Name": "KimiCLI"
