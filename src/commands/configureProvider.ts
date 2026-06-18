@@ -1,5 +1,12 @@
 import * as vscode from 'vscode';
-import { PROVIDER_METADATA, PROVIDER_NAMES, ProviderName } from '../types';
+import {
+  KIMI_VARIANT_METADATA,
+  KimiVariant,
+  PROVIDER_METADATA,
+  PROVIDER_NAMES,
+  ProviderName,
+} from '../types';
+import { applyKimiVariant, resolveKimiVariant } from '../utils/kimiVariant';
 
 export interface ConfigureResult {
   provider: ProviderName;
@@ -120,10 +127,50 @@ async function configureCustom(): Promise<ConfigureResult | undefined> {
   return { provider: 'custom', apiKey: trimmedKey, baseUrl: trimmedUrl };
 }
 
-// T075 will implement configureKimi()
+// T075 — Kimi: variant picker + key
+interface KimiVariantPickItem extends vscode.QuickPickItem {
+  variant: KimiVariant;
+}
+
 async function configureKimi(): Promise<ConfigureResult | undefined> {
+  const current = resolveKimiVariant();
+
+  const items: KimiVariantPickItem[] = (
+    Object.keys(KIMI_VARIANT_METADATA) as KimiVariant[]
+  ).map((k) => {
+    const meta = KIMI_VARIANT_METADATA[k];
+    const tag = k === current ? ' (current)' : '';
+    return {
+      label: `${meta.displayName}${tag}`,
+      description: k,
+      detail: `${meta.description}\nBase URL: ${meta.baseUrl}`,
+      variant: k,
+    };
+  });
+
+  const variantPick = await vscode.window.showQuickPick(items, {
+    title: 'Open Model: Configure Kimi (2/3)',
+    placeHolder: 'Select a Kimi variant',
+  });
+  if (!variantPick) return undefined;
+
+  const apiKey = await vscode.window.showInputBox({
+    prompt: 'Enter your Kimi API key',
+    placeHolder: 'sk-...',
+    password: true,
+    ignoreFocusOut: true,
+    title: 'Open Model: Configure Kimi (3/3)',
+    validateInput: (v) => (v.trim() ? undefined : 'API key cannot be empty'),
+  });
+  if (!apiKey) return undefined;
+
+  await applyKimiVariant(variantPick.variant);
+
+  const variantLabel = KIMI_VARIANT_METADATA[variantPick.variant].displayName;
   vscode.window.showInformationMessage(
-    'Open Model: Kimi variant flow is not yet implemented.',
+    `Open Model: Kimi configured as "${variantLabel}". ` +
+    `Run "Open Model: Toggle Provider" to enable it.`,
   );
-  return undefined;
+
+  return { provider: 'kimi', apiKey: apiKey.trim() };
 }
