@@ -2,7 +2,7 @@
   "name": "open-model",
   "displayName": "Open Model — Kimi, DeepSeek, GLM, Qwen, Doubao & MiniMax for Copilot Chat",
   "description": "Use Kimi, DeepSeek, GLM, Qwen, Doubao, and MiniMax models directly in GitHub Copilot Chat. Supports streaming, reasoning tokens, vision, and 1M context windows.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "JingciChen",
   "license": "MIT",
   "repository": {
