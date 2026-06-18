@@ -67,12 +67,57 @@ async function configureBuiltin(name: ProviderName): Promise<ConfigureResult | u
   return { provider: name, apiKey: apiKey.trim() };
 }
 
-// T074 will implement configureCustom()
+// T074 — Custom: URL + optional key
 async function configureCustom(): Promise<ConfigureResult | undefined> {
-  vscode.window.showInformationMessage(
-    'Open Model: Custom provider flow is not yet implemented.',
-  );
-  return undefined;
+  const baseUrl = await vscode.window.showInputBox({
+    prompt: 'Enter the base URL of your OpenAI- or Anthropic-compatible endpoint',
+    placeHolder: 'http://localhost:11434/v1',
+    ignoreFocusOut: true,
+    title: 'Open Model: Configure Custom (2/3)',
+    validateInput: (v) => {
+      const s = v.trim();
+      if (!s) return 'URL cannot be empty';
+      try {
+        const u = new URL(s);
+        if (!u.protocol || !u.hostname) {
+          return 'Must be a valid URL (including scheme)';
+        }
+        return undefined;
+      } catch {
+        return 'Must be a valid URL (including scheme)';
+      }
+    },
+  });
+  if (!baseUrl) return undefined;
+
+  const apiKey = await vscode.window.showInputBox({
+    prompt: 'Enter the API key (leave empty for keyless local endpoints like Ollama / vLLM)',
+    password: true,
+    ignoreFocusOut: true,
+    title: 'Open Model: Configure Custom (3/3)',
+  });
+  if (apiKey === undefined) return undefined;
+
+  const trimmedUrl = baseUrl.trim();
+  const trimmedKey = apiKey.trim();
+
+  await vscode.workspace
+    .getConfiguration('openModel.custom')
+    .update('baseUrl', trimmedUrl, vscode.ConfigurationTarget.Global);
+
+  if (trimmedKey) {
+    vscode.window.showInformationMessage(
+      'Open Model: Custom provider configured (URL + API key). ' +
+      'Run "Open Model: Toggle Provider" to enable it.',
+    );
+  } else {
+    vscode.window.showInformationMessage(
+      'Open Model: Custom provider configured (URL only, no API key). ' +
+      'Run "Open Model: Toggle Provider" to enable it.',
+    );
+  }
+
+  return { provider: 'custom', apiKey: trimmedKey, baseUrl: trimmedUrl };
 }
 
 // T075 will implement configureKimi()
