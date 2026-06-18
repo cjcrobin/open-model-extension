@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { ModelConfig, PROVIDER_METADATA, ProviderName, ImageUnderstandingConfig } from './types';
+import { KIMI_VARIANT_METADATA, ModelConfig, PROVIDER_METADATA, ProviderName, ImageUnderstandingConfig } from './types';
 import { getFriendlyErrorMessage } from './errors';
 import { TokenUsageRecord } from './types/usage';
 import { resolveSystemPrompt } from './utils/systemPrompt';
 import { describeImages } from './utils/describeImages';
+import { resolveKimiVariant } from './utils/kimiVariant';
 
 // LanguageModelThinkingPart is an internal VS Code API not yet in @types/vscode.
 // It renders a collapsible "Thinking..." block in Copilot Chat, identical to
@@ -134,10 +135,13 @@ export function convertMessages(
  */
 export function parseSSELine(line: string): ChatCompletionChunk | null {
   const trimmed = line.trim();
-  if (!trimmed || trimmed === 'data: [DONE]' || !trimmed.startsWith('data: ')) {
-    return null;
-  }
-  return JSON.parse(trimmed.slice('data: '.length));
+  if (!trimmed) return null;
+  if (!trimmed.startsWith('data:')) return null;
+
+  const afterColon = trimmed.slice('data:'.length).trimStart();
+  if (!afterColon || afterColon === '[DONE]') return null;
+
+  return JSON.parse(afterColon);
 }
 
 /**
@@ -243,6 +247,65 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     this.output.appendLine(`[${ts}] [${this.providerName}] ${message}`);
   }
 
+  /**
+   * Resolve the outgoing request's base URL.
+   *
+   * Order:
+   *   1. `modelConfig.baseUrlOverride` — per-model override in settings.json
+   *   2. `getBaseUrl()` callback — used by the Custom provider to read
+   *      `openModel.custom.baseUrl` at request time
+   *   3. `openModel.<provider>.baseUrl` from configuration — what the
+   *      Configure Provider wizard (and manual edits) write. Reading from
+   *      configuration on every request means users can flip Kimi between
+   *      Code and AI Platform by just changing baseUrl; no reload needed.
+   *   4. `PROVIDER_METADATA[name].baseUrl` — built-in default.
+   */
+  private resolveBaseUrl(modelConfig: ModelConfig | undefined): string {
+    const override = modelConfig?.baseUrlOverride?.trim();
+    if (override) return override;
+
+    if (this.getBaseUrl) {
+      const cb = this.getBaseUrl();
+      if (cb) return cb;
+    }
+
+    const fromConfig = vscode.workspace
+      .getConfiguration(`openModel.${this.providerName}`)
+      .get<string>('baseUrl', '')
+      ?.trim();
+    if (fromConfig) return fromConfig;
+
+    return PROVIDER_METADATA[this.providerName].baseUrl;
+  }
+
+  /**
+   * Build the outgoing request headers.
+   *
+   * - Always includes Content-Type + Bearer auth.
+   * - For Kimi, consults the active KimiVariant (inferred from
+   *   `openModel.kimi.baseUrl`) and merges the variant's extraHeaders. This
+   *   is what injects the whitelisted `User-Agent: KimiCLI/1.5` when the
+   *   user is on the Coding gateway.
+   * - For other providers, merges any static `extraHeaders` declared in
+   *   PROVIDER_METADATA (currently unused, kept as an extension point).
+   */
+  private buildRequestHeaders(apiKey: string): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    if (this.providerName === 'kimi') {
+      const extras = KIMI_VARIANT_METADATA[resolveKimiVariant()].extraHeaders;
+      if (extras) Object.assign(headers, extras);
+    } else {
+      const extras = PROVIDER_METADATA[this.providerName].extraHeaders;
+      if (extras) Object.assign(headers, extras);
+    }
+
+    return headers;
+  }
+
   dispose(): void {
     this._onDidChange.dispose();
   }
@@ -277,7 +340,12 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     const visionBaseUrl =
       visionProvider === 'custom'
         ? vscode.workspace.getConfiguration('openModel.custom').get<string>('baseUrl', '')
-        : PROVIDER_METADATA[visionProvider]?.baseUrl ?? '';
+        : (vscode.workspace
+            .getConfiguration(`openModel.${visionProvider}`)
+            .get<string>('baseUrl', '')
+            ?.trim()
+          || PROVIDER_METADATA[visionProvider]?.baseUrl
+          || '');
 
     if (!visionApiKey || !visionBaseUrl) {
       this.log(`Image understanding configured (${imageConfig.provider}/${imageConfig.modelId}) but API key or base URL missing. Stripping images.`);
@@ -353,9 +421,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   ): Promise<void> {
     const apiKey = this.getApiKey();
     const modelConfig = this.getModels().find((m) => m.id === model.id);
-    const baseUrl = modelConfig?.baseUrlOverride?.trim()
-      || (this.getBaseUrl ? this.getBaseUrl() : '')
-      || PROVIDER_METADATA[this.providerName].baseUrl;
+    const baseUrl = this.resolveBaseUrl(modelConfig);
     const displayName = this.getDisplayName
       ? this.getDisplayName()
       : PROVIDER_METADATA[this.providerName].displayName;
@@ -414,10 +480,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: this.buildRequestHeaders(apiKey),
       body: JSON.stringify(requestBody),
       signal: abortController.signal,
     });

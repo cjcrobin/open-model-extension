@@ -6,6 +6,8 @@ import { UsageStore } from './storage/usageStore';
 import { exportConfigCommand } from './commands/exportConfig';
 import { importConfigCommand } from './commands/importConfig';
 import { showUsageCommand } from './commands/showUsage';
+import { toggleProviderCommand } from './commands/toggleProvider';
+import { configureProviderCommand } from './commands/configureProvider';
 import { createStatusBarItem, updateStatusBar } from './ui/statusBar';
 import { ConfigPanel } from './webview/configPanel';
 
@@ -311,6 +313,33 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         });
       }
     })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.toggleProvider', toggleProviderCommand),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.configureProvider', async () => {
+      const result = await configureProviderCommand();
+      if (!result) return;
+
+      if (result.baseUrl) {
+        await vscode.workspace
+          .getConfiguration(`openModel.${result.provider}`)
+          .update('baseUrl', result.baseUrl, vscode.ConfigurationTarget.Global);
+      }
+
+      if (result.apiKey) {
+        await context.secrets.store(`openModel.${result.provider}.apiKey`, result.apiKey);
+        manager!.setApiKey(result.provider, result.apiKey);
+      } else {
+        await context.secrets.delete(`openModel.${result.provider}.apiKey`);
+        manager!.setApiKey(result.provider, '');
+      }
+
+      log(output, `[${PROVIDER_METADATA[result.provider].displayName}] Configuration saved via Configure Provider`);
+    }),
   );
 
   log(output, 'Open Model extension activated.');

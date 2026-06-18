@@ -35,6 +35,8 @@ export const PROVIDER_METADATA: Record<
   {
     displayName: string;
     baseUrl: string;
+    /** Vendor-specific headers merged into every request for this provider. */
+    extraHeaders?: Record<string, string>;
   }
 > = {
   kimi: {
@@ -64,6 +66,66 @@ export const PROVIDER_METADATA: Record<
   custom: {
     displayName: 'Custom',
     baseUrl: '',
+  },
+};
+
+/**
+ * Kimi ships in two flavours that share the same provider name but differ in
+ * endpoint / required headers / default model list:
+ *   - 'code'         : Kimi For Coding gateway (whitelisted, requires KimiCLI UA).
+ *   - 'ai-platform'  : Moonshot open platform (plain OpenAI-compatible API).
+ * The active variant is inferred from `openModel.kimi.baseUrl` — no extra
+ * settings field is stored.
+ */
+export type KimiVariant = 'code' | 'ai-platform';
+
+export interface KimiVariantMeta {
+  displayName: string;
+  description: string;
+  baseUrl: string;
+  defaultModels: ModelConfig[];
+  extraHeaders?: Record<string, string>;
+}
+
+export const KIMI_VARIANT_METADATA: Record<KimiVariant, KimiVariantMeta> = {
+  code: {
+    displayName: 'Kimi Code',
+    description: 'Coding Plan — whitelisted coding-agent gateway (requires KimiCLI User-Agent).',
+    baseUrl: 'https://api.kimi.com/coding/v1',
+    defaultModels: [
+      {
+        id: 'kimi-for-coding',
+        name: 'Kimi for Coding',
+        maxInputTokens: 262144,
+        maxOutputTokens: 32768,
+        supportsVision: true,
+      },
+    ],
+    extraHeaders: {
+      'User-Agent': 'KimiCLI/1.5',
+      'X-Client-Name': 'KimiCLI',
+    },
+  },
+  'ai-platform': {
+    displayName: 'Kimi AI Platform',
+    description: 'Moonshot open platform — plain OpenAI-compatible API.',
+    baseUrl: 'https://api.moonshot.cn/v1',
+    defaultModels: [
+      {
+        id: 'kimi-k2.6',
+        name: 'Kimi K2.6',
+        maxInputTokens: 262144,
+        maxOutputTokens: 32768,
+        supportsVision: true,
+      },
+      {
+        id: 'kimi-k2.5',
+        name: 'Kimi K2.5',
+        maxInputTokens: 262144,
+        maxOutputTokens: 32768,
+        supportsVision: true,
+      },
+    ],
   },
 };
 

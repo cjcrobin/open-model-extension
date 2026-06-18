@@ -145,7 +145,8 @@ export class ProviderManager implements vscode.Disposable {
 
     const baseUrl = name === 'custom'
       ? getNestedConfig<string>('custom', 'baseUrl', '')
-      : PROVIDER_METADATA[name].baseUrl;
+      : (getNestedConfig<string>(name, 'baseUrl', '').trim()
+        || PROVIDER_METADATA[name].baseUrl);
 
     if (!baseUrl) {
       this.log(`[${PROVIDER_METADATA[name].displayName}] Skipping model refresh: no base URL`);
