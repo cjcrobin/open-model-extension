@@ -72,6 +72,31 @@ The key is encrypted at rest and loaded automatically when the extension starts.
 > - [Doubao / ByteDance](https://console.volcengine.com/ark/)
 > - [MiniMax](https://platform.minimaxi.com/)
 
+### Interactive Configuration
+
+Two command-palette wizards let you set up providers without hand-editing
+`settings.json`:
+
+- **Open Model: Configure Provider** — pick a provider and the wizard
+  walks you through the required inputs:
+  - Built-in vendors (DeepSeek, GLM, Qwen, Doubao, MiniMax): enter the
+    API key.
+  - **Custom**: enter the base URL, then optionally an API key (leave
+    blank for keyless local endpoints such as Ollama or vLLM).
+  - **Kimi**: first choose between *Kimi Code* (Coding Plan gateway)
+    and *Kimi AI Platform* (Moonshot's open API), then enter the API
+    key. See [Kimi: Code vs AI Platform](#kimi-code-vs-ai-platform)
+    below for the differences.
+- **Open Model: Toggle Provider** — lists every provider with its
+  current `Enabled` / `Disabled` state. Selecting one flips
+  `openModel.<provider>.enabled`.
+
+> **Configure vs Set API Key:** `Open Model: Set API Key` changes only
+> the key for a single provider you already picked. `Configure Provider`
+> is the full onboarding wizard — it's what you want the first time you
+> add a provider, or when you switch Kimi between Code and AI Platform.
+> Both commands store the key in VS Code Secret Storage.
+
 ### Custom Model Example
 
 Add a custom model to a provider by editing the `models` array in settings:
@@ -94,6 +119,53 @@ Add a custom model to a provider by editing the `models` array in settings:
   }
 ]
 ```
+
+### Kimi: Code vs AI Platform
+
+Kimi ships in two flavours that share the `openModel.kimi.*` settings
+namespace but differ in endpoint, default model list, and required
+headers. The extension infers which one you're on from
+`openModel.kimi.baseUrl` — there is no extra `variant` field.
+
+| Variant | Base URL | Default models | Required headers |
+|---------|----------|----------------|------------------|
+| **Kimi Code** (Coding Plan gateway) | `https://api.kimi.com/coding` | `kimi-for-coding` | `User-Agent: KimiCLI/1.5`, `X-Client-Name: KimiCLI` |
+| **Kimi AI Platform** (Moonshot open API) | `https://api.moonshot.cn/v1` | `kimi-k2.6`, `kimi-k2.5` | — |
+
+**Picking a variant interactively.** Run **Open Model: Configure
+Provider**, choose *Kimi*, then pick *Kimi Code* or *Kimi AI Platform*
+in the second step. The wizard writes the matching `baseUrl`,
+`extraHeaders`, and default model list for you.
+
+**Picking a variant by hand.** Edit `settings.json` directly — the
+provider re-resolves the variant on every request, so no restart is
+required:
+
+```jsonc
+// Kimi Code
+"openModel.kimi.baseUrl": "https://api.kimi.com/coding",
+"openModel.kimi.extraHeaders": {
+  "User-Agent": "KimiCLI/1.5",
+  "X-Client-Name": "KimiCLI"
+},
+"openModel.kimi.models": [
+  { "id": "kimi-for-coding", "name": "Kimi for Coding", "maxInputTokens": 262144, "maxOutputTokens": 32768, "supportsVision": true }
+]
+
+// Kimi AI Platform
+"openModel.kimi.baseUrl": "https://api.moonshot.cn/v1",
+"openModel.kimi.extraHeaders": {},
+"openModel.kimi.models": [
+  { "id": "kimi-k2.6", "name": "Kimi K2.6", "maxInputTokens": 262144, "maxOutputTokens": 32768, "supportsVision": true },
+  { "id": "kimi-k2.5", "name": "Kimi K2.5", "maxInputTokens": 262144, "maxOutputTokens": 32768, "supportsVision": true }
+]
+```
+
+> **Why the extra headers for Kimi Code?** The `/coding/v1` gateway
+> only serves whitelisted coding agents. If the `User-Agent` does not
+> look like one of the known agents (KimiCLI, Claude Code, Roo Code,
+> Kilo Code, …) the gateway returns `access_terminated_error`. Setting
+> `User-Agent: KimiCLI/1.5` is what lets this extension through.
 
 ### Image / Vision Support
 
@@ -138,6 +210,8 @@ If no image understanding model is configured and the active model doesn't suppo
 | **Open Model: Clear API Key** | Remove a provider's stored API key |
 | **Open Model: Test Connection** | Test API connectivity for a provider |
 | **Open Model: Configure Providers** | Open settings for this extension |
+| **Open Model: Configure Provider** | Interactive wizard: pick a provider → enter URL/key/variant (recommended for first-time setup and for switching Kimi between Code and AI Platform) |
+| **Open Model: Toggle Provider** | Flip a provider's `enabled` flag (QuickPick lists every provider with its current state) |
 | **Open Model: Reload Providers** | Reload model registrations |
 | **Open Model: Export Configuration** | Export non-sensitive config to a JSON file |
 | **Open Model: Import Configuration** | Import config from a JSON file |
