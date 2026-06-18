@@ -8,6 +8,12 @@ describe('parseSSELine', () => {
     expect(result).toEqual({ choices: [{ delta: { content: 'hello' } }] });
   });
 
+  it('parses a compact SSE data line with no space after the colon (Kimi for Coding)', () => {
+    const line = 'data:{"choices":[{"delta":{"content":"hi"}}]}';
+    const result = parseSSELine(line);
+    expect(result).toEqual({ choices: [{ delta: { content: 'hi' } }] });
+  });
+
   it('returns null for empty line', () => {
     expect(parseSSELine('')).toBeNull();
     expect(parseSSELine('   ')).toBeNull();
@@ -15,6 +21,7 @@ describe('parseSSELine', () => {
 
   it('returns null for data: [DONE]', () => {
     expect(parseSSELine('data: [DONE]')).toBeNull();
+    expect(parseSSELine('data:[DONE]')).toBeNull();
   });
 
   it('returns null for non-data prefix lines', () => {

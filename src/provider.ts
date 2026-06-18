@@ -135,10 +135,13 @@ export function convertMessages(
  */
 export function parseSSELine(line: string): ChatCompletionChunk | null {
   const trimmed = line.trim();
-  if (!trimmed || trimmed === 'data: [DONE]' || !trimmed.startsWith('data: ')) {
-    return null;
-  }
-  return JSON.parse(trimmed.slice('data: '.length));
+  if (!trimmed) return null;
+  if (!trimmed.startsWith('data:')) return null;
+
+  const afterColon = trimmed.slice('data:'.length).trimStart();
+  if (!afterColon || afterColon === '[DONE]') return null;
+
+  return JSON.parse(afterColon);
 }
 
 /**
