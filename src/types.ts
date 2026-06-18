@@ -91,7 +91,7 @@ export const KIMI_VARIANT_METADATA: Record<KimiVariant, KimiVariantMeta> = {
   code: {
     displayName: 'Kimi Code',
     description: 'Coding Plan — whitelisted coding-agent gateway (requires KimiCLI User-Agent).',
-    baseUrl: 'https://api.kimi.com/coding',
+    baseUrl: 'https://api.kimi.com/coding/v1',
     defaultModels: [
       {
         id: 'kimi-for-coding',

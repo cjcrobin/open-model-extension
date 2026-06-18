@@ -217,7 +217,7 @@ describe('configureProviderCommand — Kimi variant flow', () => {
     expect(result).toEqual({ provider: 'kimi', apiKey: 'km-key-123' });
 
     const cfg = vscode.workspace.getConfiguration('openModel.kimi');
-    expect(cfg.get('baseUrl')).toBe('https://api.kimi.com/coding');
+    expect(cfg.get('baseUrl')).toBe('https://api.kimi.com/coding/v1');
     expect(cfg.get('extraHeaders')).toEqual({
       'User-Agent': 'KimiCLI/1.5',
       'X-Client-Name': 'KimiCLI',
@@ -290,6 +290,6 @@ describe('configureProviderCommand — Kimi variant flow', () => {
     expect(aiItem.label).toContain('(current)');
     expect(aiItem.detail).toContain('api.moonshot.cn');
     const codeItem = list.find((i) => i.description === 'code')!;
-    expect(codeItem.detail).toContain('api.kimi.com/coding');
+    expect(codeItem.detail).toContain('api.kimi.com/coding/v1');
   });
 });

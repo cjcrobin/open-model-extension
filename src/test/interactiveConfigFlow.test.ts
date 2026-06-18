@@ -68,7 +68,7 @@ describe('interactive configure + toggle end-to-end', () => {
     );
 
     const cfg = vscode.workspace.getConfiguration('openModel.kimi');
-    expect(cfg.get('baseUrl')).toBe('https://api.kimi.com/coding');
+    expect(cfg.get('baseUrl')).toBe('https://api.kimi.com/coding/v1');
     expect(cfg.get('extraHeaders')).toEqual({
       'User-Agent': 'KimiCLI/1.5',
       'X-Client-Name': 'KimiCLI',

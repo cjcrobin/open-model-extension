@@ -138,7 +138,7 @@ describe('OpenAICompatProvider — vendor extraHeaders', () => {
   });
 
   it('injects KimiCLI User-Agent when Kimi is configured for the Coding gateway', async () => {
-    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding');
+    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding/v1');
     const kimiModel = { id: 'kimi-for-coding', name: 'Kimi for Coding' };
     const provider = new OpenAICompatProvider(
       'kimi',
@@ -186,7 +186,7 @@ describe('OpenAICompatProvider — vendor extraHeaders', () => {
   });
 
   it('Kimi routes to the baseUrl from configuration (wizard-written) rather than the hardcoded PROVIDER_METADATA default', async () => {
-    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding');
+    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding/v1');
     const kimiModel = { id: 'kimi-for-coding', name: 'Kimi for Coding' };
     const provider = new OpenAICompatProvider(
       'kimi',
@@ -224,7 +224,7 @@ describe('OpenAICompatProvider — vendor extraHeaders', () => {
     );
 
     const [url] = vi.mocked(fetch).mock.calls[0];
-    expect(url).toBe('https://api.kimi.com/coding/chat/completions');
+    expect(url).toBe('https://api.kimi.com/coding/v1/chat/completions');
     expect(url).not.toContain('api.moonshot.cn');
   });
 

@@ -19,7 +19,7 @@ describe('resolveKimiVariant', () => {
   });
 
   it('returns "code" for the Kimi coding gateway URL', () => {
-    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding');
+    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding/v1');
     expect(resolveKimiVariant()).toBe('code');
   });
 
