@@ -185,6 +185,49 @@ describe('OpenAICompatProvider — vendor extraHeaders', () => {
     });
   });
 
+  it('Kimi routes to the baseUrl from configuration (wizard-written) rather than the hardcoded PROVIDER_METADATA default', async () => {
+    setMockConfig('openModel.kimi', 'baseUrl', 'https://api.kimi.com/coding');
+    const kimiModel = { id: 'kimi-for-coding', name: 'Kimi for Coding' };
+    const provider = new OpenAICompatProvider(
+      'kimi',
+      () => 'km-test-key',
+      () => [kimiModel],
+      createOutput(),
+    );
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      }),
+    } as Response);
+
+    const modelInfo = {
+      id: 'kimi-for-coding',
+      name: 'Kimi for Coding',
+      family: 'Kimi',
+      version: 'kimi-for-coding',
+      maxInputTokens: 8192,
+      maxOutputTokens: 4096,
+      capabilities: { toolCalling: false, imageInput: false },
+    } as unknown as vscode.LanguageModelChatInformation;
+
+    await provider.provideLanguageModelChatResponse(
+      modelInfo,
+      [userMessage('hi')],
+      {} as vscode.ProvideLanguageModelChatResponseOptions,
+      makeProgress(),
+      makeToken(),
+    );
+
+    const [url] = vi.mocked(fetch).mock.calls[0];
+    expect(url).toBe('https://api.kimi.com/coding/chat/completions');
+    expect(url).not.toContain('api.moonshot.cn');
+  });
+
   it('does NOT inject KimiCLI User-Agent when Kimi baseUrl points to an unknown proxy', async () => {
     setMockConfig('openModel.kimi', 'baseUrl', 'https://proxy.example.com/v1');
     const kimiModel = { id: 'kimi-k2.6', name: 'Kimi K2.6' };

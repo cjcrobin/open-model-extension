@@ -245,6 +245,37 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   }
 
   /**
+   * Resolve the outgoing request's base URL.
+   *
+   * Order:
+   *   1. `modelConfig.baseUrlOverride` — per-model override in settings.json
+   *   2. `getBaseUrl()` callback — used by the Custom provider to read
+   *      `openModel.custom.baseUrl` at request time
+   *   3. `openModel.<provider>.baseUrl` from configuration — what the
+   *      Configure Provider wizard (and manual edits) write. Reading from
+   *      configuration on every request means users can flip Kimi between
+   *      Code and AI Platform by just changing baseUrl; no reload needed.
+   *   4. `PROVIDER_METADATA[name].baseUrl` — built-in default.
+   */
+  private resolveBaseUrl(modelConfig: ModelConfig | undefined): string {
+    const override = modelConfig?.baseUrlOverride?.trim();
+    if (override) return override;
+
+    if (this.getBaseUrl) {
+      const cb = this.getBaseUrl();
+      if (cb) return cb;
+    }
+
+    const fromConfig = vscode.workspace
+      .getConfiguration(`openModel.${this.providerName}`)
+      .get<string>('baseUrl', '')
+      ?.trim();
+    if (fromConfig) return fromConfig;
+
+    return PROVIDER_METADATA[this.providerName].baseUrl;
+  }
+
+  /**
    * Build the outgoing request headers.
    *
    * - Always includes Content-Type + Bearer auth.
@@ -306,7 +337,12 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
     const visionBaseUrl =
       visionProvider === 'custom'
         ? vscode.workspace.getConfiguration('openModel.custom').get<string>('baseUrl', '')
-        : PROVIDER_METADATA[visionProvider]?.baseUrl ?? '';
+        : (vscode.workspace
+            .getConfiguration(`openModel.${visionProvider}`)
+            .get<string>('baseUrl', '')
+            ?.trim()
+          || PROVIDER_METADATA[visionProvider]?.baseUrl
+          || '');
 
     if (!visionApiKey || !visionBaseUrl) {
       this.log(`Image understanding configured (${imageConfig.provider}/${imageConfig.modelId}) but API key or base URL missing. Stripping images.`);
@@ -382,9 +418,7 @@ export class OpenAICompatProvider implements vscode.LanguageModelChatProvider {
   ): Promise<void> {
     const apiKey = this.getApiKey();
     const modelConfig = this.getModels().find((m) => m.id === model.id);
-    const baseUrl = modelConfig?.baseUrlOverride?.trim()
-      || (this.getBaseUrl ? this.getBaseUrl() : '')
-      || PROVIDER_METADATA[this.providerName].baseUrl;
+    const baseUrl = this.resolveBaseUrl(modelConfig);
     const displayName = this.getDisplayName
       ? this.getDisplayName()
       : PROVIDER_METADATA[this.providerName].displayName;
