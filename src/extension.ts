@@ -7,6 +7,7 @@ import { exportConfigCommand } from './commands/exportConfig';
 import { importConfigCommand } from './commands/importConfig';
 import { showUsageCommand } from './commands/showUsage';
 import { toggleProviderCommand } from './commands/toggleProvider';
+import { configureProviderCommand } from './commands/configureProvider';
 import { createStatusBarItem, updateStatusBar } from './ui/statusBar';
 import { ConfigPanel } from './webview/configPanel';
 
@@ -316,6 +317,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('openModel.toggleProvider', toggleProviderCommand),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('openModel.configureProvider', async () => {
+      const result = await configureProviderCommand();
+      if (!result) return;
+
+      await context.secrets.store(`openModel.${result.provider}.apiKey`, result.apiKey);
+      manager!.setApiKey(result.provider, result.apiKey);
+      log(output, `[${PROVIDER_METADATA[result.provider].displayName}] API key saved via Configure Provider`);
+    }),
   );
 
   log(output, 'Open Model extension activated.');
