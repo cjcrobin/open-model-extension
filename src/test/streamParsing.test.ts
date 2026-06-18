@@ -57,4 +57,45 @@ describe('parseSSELine', () => {
     const result = parseSSELine(line) as ChatCompletionChunk;
     expect(result.choices[0].finish_reason).toBe('tool_calls');
   });
+
+  it('accepts any amount of whitespace between `data:` and the JSON payload', () => {
+    expect(parseSSELine('data:{"choices":[]}')).toEqual({ choices: [] });
+    expect(parseSSELine('data: {"choices":[]}')).toEqual({ choices: [] });
+    expect(parseSSELine('data:  {"choices":[]}')).toEqual({ choices: [] });
+    expect(parseSSELine('data:\t{"choices":[]}')).toEqual({ choices: [] });
+  });
+
+  it('strips trailing CRLF (some gateways terminate SSE lines with \\r\\n)', () => {
+    expect(parseSSELine('data: {"choices":[]}\r')).toEqual({ choices: [] });
+    expect(parseSSELine('data:{"choices":[]}\r\n')).toEqual({ choices: [] });
+  });
+
+  it('returns null for a bare `data:` / `data: ` line with no payload', () => {
+    expect(parseSSELine('data:')).toBeNull();
+    expect(parseSSELine('data: ')).toBeNull();
+    expect(parseSSELine('data:    ')).toBeNull();
+  });
+
+  it('parses a usage-only chunk (sent at end of OpenAI streams)', () => {
+    const line = 'data: {"choices":[],"usage":{"prompt_tokens":9,"completion_tokens":85,"total_tokens":94}}';
+    const result = parseSSELine(line) as ChatCompletionChunk;
+    expect(result.usage).toEqual({ prompt_tokens: 9, completion_tokens: 85, total_tokens: 94 });
+  });
+
+  it('parses CJK content without corruption (regression: non-ASCII through the trim/JSON path)', () => {
+    const line = 'data: {"choices":[{"delta":{"content":"你好，世界！"}}]}';
+    const result = parseSSELine(line);
+    expect(result?.choices[0].delta?.content).toBe('你好，世界！');
+  });
+
+  it('parses Kimi-style compact format for every chunk type the other providers also emit', () => {
+    expect(parseSSELine('data:{"choices":[{"delta":{"content":"Hello"}}]}')
+      ?.choices[0].delta?.content).toBe('Hello');
+    expect(parseSSELine('data:{"choices":[{"delta":{"reasoning_content":"think"}}]}')
+      ?.choices[0].delta?.reasoning_content).toBe('think');
+    expect(parseSSELine('data:{"choices":[{"delta":{},"finish_reason":"stop"}]}')
+      ?.choices[0].finish_reason).toBe('stop');
+    expect(parseSSELine('data:{"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3}}')
+      ?.usage).toEqual({ prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 });
+  });
 });
