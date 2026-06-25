@@ -22,7 +22,7 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, **Qwen**, **Doubao**, and **MiniMax**
 - WebView configuration panel
 - Status bar indicator for enabled providers
 - Test connection command for API key verification
-- Automatic model discovery from provider APIs with manual refresh command
+- On-demand model discovery from provider APIs via the **Refresh Models from API** command
 - Image/vision input for multimodal models (attach images directly in Copilot Chat)
 
 ## Requirements
@@ -42,11 +42,13 @@ Integrate **Kimi**, **DeepSeek**, **GLM**, **Qwen**, **Doubao**, and **MiniMax**
 
 | Setting | Description |
 |---------|-------------|
-| `openModel.{provider}.enabled` | Enable a provider (kimi, deepseek, glm, qwen, custom) |
+| `openModel.{provider}.enabled` | Enable a provider (`kimi`, `deepseek`, `glm`, `qwen`, `doubao`, `minimax`, `custom`) |
 | `openModel.{provider}.models` | List of models for a provider |
+| `openModel.{provider}.baseUrl` | Override the built-in base URL for a provider (leave empty to use the default) |
+| `openModel.{provider}.extraHeaders` | Extra HTTP headers (object, string values) merged into every request for a provider |
 | `openModel.{provider}.requestParams` | Advanced request parameters (temperature, topP, etc.) |
-| `openModel.custom.baseUrl` | Base URL for custom OpenAI-compatible provider |
-| `openModel.custom.vendorName` | Display name for custom provider |
+| `openModel.custom.baseUrl` | Base URL for the custom OpenAI-compatible provider |
+| `openModel.custom.vendorName` | Display name for the custom provider |
 | `openModel.systemPrompts` | System prompt templates |
 | `openModel.activeSystemPrompt` | ID of the active system prompt template |
 | `openModel.imageUnderstandingModel` | Designated vision model for image description fallback |
@@ -332,15 +334,20 @@ npm test
 
 Test files are in `src/test/`:
 - `convertMessages.test.ts` — message format conversion
-- `streamParsing.test.ts` — SSE line parsing
+- `streamParsing.test.ts` — SSE line parsing (OpenAI + Kimi compact format)
 - `tokenCounting.test.ts` — CJK-aware token estimation
 - `modelsTypes.test.ts` — API response type definitions
 - `fetchModels.test.ts` — HTTP model fetching with mock
 - `mergeModels.test.ts` — fetched/existing model merging logic
 - `refreshProviderModels.test.ts` — provider refresh flow (fetch, merge, persist)
-- `extensionRefresh.test.ts` — startup auto-refresh and manual refresh command
+- `extensionRefresh.test.ts` — manual refresh command
 - `describeImages.test.ts` — vision model image description utility
 - `imageUnderstanding.test.ts` — image understanding fallback integration
+- `kimiVariant.test.ts` — Kimi Code vs AI Platform variant resolver
+- `providerExtraHeaders.test.ts` — dynamic per-variant request headers + baseUrl from configuration
+- `configureProvider.test.ts` — Configure Provider wizard (builtin / custom / Kimi flows)
+- `toggleProvider.test.ts` — Toggle Provider command
+- `interactiveConfigFlow.test.ts` — end-to-end interactive configure + toggle scenarios
 
 ### Local Integration Testing (Extension Host)
 
@@ -419,17 +426,17 @@ npm run lint
 
 ```
 src/
-  extension.ts          — Extension entry point, command registration, auto-refresh
+  extension.ts          — Extension entry point, command registration
   provider.ts           — OpenAI-compatible chat provider, SSE streaming
   manager.ts            — Provider lifecycle, API key cache, model refresh
-  types.ts              — Shared type definitions (ModelConfig, ProviderName, API types)
+  types.ts              — Shared type definitions (ModelConfig, ProviderName, KimiVariant, API types)
   errors.ts             — Friendly error messages
   retry.ts              — Exponential backoff retry logic
-  commands/             — Command implementations (export/import config, usage stats)
+  commands/             — Command implementations (configureProvider, toggleProvider, export/import config, usage stats)
   storage/              — Usage data persistence (globalState)
   types/                — Usage type definitions (TokenUsageRecord, UsageSummary)
   ui/                   — Status bar indicator
-  utils/                — System prompt, model fetching/merging, image description
+  utils/                — System prompt, model fetching/merging, image description, Kimi variant resolver
   webview/              — WebView configuration panel
   test/                 — Unit tests (vitest)
 media/                  — WebView static assets (CSS/JS)
